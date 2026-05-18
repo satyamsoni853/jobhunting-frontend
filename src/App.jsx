@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
+// Dynamic API Base URL detection: Automatically uses local backend when testing on localhost, 
+// and seamlessly switches to the production Render URL when deployed!
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : 'https://clentserver.onrender.com';
+
 function App() {
   // 1. Form parameters
   const [senderEmail, setSenderEmail] = useState('');
@@ -139,7 +145,7 @@ Warmly,
     addTerminalLog('info', `📡 Testing SMTP auth connectivity for: ${senderEmail}...`);
 
     try {
-      const response = await fetch('http://localhost:5000/api/verify-smtp', {
+      const response = await fetch(`${API_BASE_URL}/api/verify-smtp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderEmail, appPassword })
@@ -337,7 +343,7 @@ Warmly,
         }
 
         try {
-          const response = await fetch('http://localhost:5000/api/send-single-email', {
+          const response = await fetch(`${API_BASE_URL}/api/send-single-email`, {
             method: 'POST',
             body: singleFormData
           });
