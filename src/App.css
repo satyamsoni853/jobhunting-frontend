@@ -1225,3 +1225,20 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .otp-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .otp-input { width: 150px; text-align: center; letter-spacing: 0.3em; font-family: var(--mono); font-size: 1.1rem; }
 @media (max-width: 640px) { .otp-input { width: 100%; } .otp-row .btn { flex: 1; } }
+
+/* Simple Satyam screen */
+.satyam-card { border-color: var(--border-glow); }
+.satyam-cta { font-size: 1.15rem; padding: 16px 36px; }
+.msg-edit { margin-top: 12px; }
+.msg-edit summary { cursor: pointer; color: var(--text-secondary); font-size: 0.88rem; padding: 6px 0; }
+.msg-edit .input-field { margin-top: 8px; }
+.satyam-status { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); }
+
+/* Advanced tools stay closed until asked for */
+.advanced { border: 1px solid var(--border-color); border-radius: 14px; padding: 0 16px; background: rgba(255, 255, 255, 0.02); }
+.advanced > summary { cursor: pointer; padding: 16px 0; font-weight: 700; list-style: none; }
+.advanced > summary::-webkit-details-marker { display: none; }
+.advanced > summary::after { content: '+'; float: right; color: var(--text-secondary); }
+.advanced[open] > summary::after { content: '–'; }
+.advanced > summary span { display: block; font-weight: 400; font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+.advanced[open] { padding-bottom: 16px; }

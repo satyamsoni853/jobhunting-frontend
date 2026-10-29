@@ -4,6 +4,7 @@ import JobTargets from './JobTargets.jsx';
 import Guide from './Guide.jsx';
 import ResumeTailor from './ResumeTailor.jsx';
 import JobsBoard from './JobsBoard.jsx';
+import SatyamSend from './SatyamSend.jsx';
 import MailerStatus from './MailerStatus.jsx';
 import SmtpSettings from './SmtpSettings.jsx';
 
@@ -291,89 +292,6 @@ Satyam Soni`
 
   // One click "Satyam" profile: sender, subject and body from the server (same text the auto-mailer sends),
   // plus the resume PDF when the access key is saved in this browser (the resume is not public).
-  // The Satyam profile and resume are behind a code mailed to the owner. The token lasts 30 minutes in this tab.
-  const [otp, setOtp] = useState({ phase: 'idle', masked: '', code: '', error: '' }); // idle | sending | enter | verifying
-
-  const getProfileToken = () => {
-    try {
-      const t = JSON.parse(sessionStorage.getItem('satyam_token') || 'null');
-      return t && t.exp > Date.now() ? t.token : '';
-    } catch {
-      return '';
-    }
-  };
-
-  // Fills sender, subject, body and attaches the resume. Returns false when the token was rejected.
-  const loadSatyam = async (token) => {
-    const headers = { 'X-Profile-Token': token };
-    const res = await fetch(`${API_BASE_URL}/api/profile/satyam`, { headers });
-    if (res.status === 401) return false;
-    if (!res.ok) throw new Error(`Server returned ${res.status}`);
-    const p = await res.json();
-    setSenderEmail(p.email);
-    setSubject(p.subject);
-    setBody(p.body);
-    addTerminalLog('success', 'Satyam profile loaded: sender, subject and body filled. Enter your App Password.');
-
-    try {
-      const r = await fetch(`${API_BASE_URL}/api/profile/satyam/resume`, { headers });
-      if (!r.ok) throw new Error(`server returned ${r.status}`);
-      setResumeFile(new File([await r.blob()], 'Satyam_Soni_Resume.pdf', { type: 'application/pdf' }));
-      addTerminalLog('success', 'Resume attached: Satyam_Soni_Resume.pdf');
-    } catch (e) {
-      addTerminalLog('error', `Resume not attached: ${e.message}`);
-    }
-    return true;
-  };
-
-  const applySatyamProfile = async () => {
-    const token = getProfileToken();
-    if (token) {
-      try {
-        if (await loadSatyam(token)) return;
-      } catch (e) {
-        addTerminalLog('error', `Could not load the Satyam profile: ${e.message}`);
-        return;
-      }
-      try {
-        sessionStorage.removeItem('satyam_token'); // expired or rejected: ask for a new code
-      } catch {
-        /* storage blocked */
-      }
-    }
-    setOtp({ phase: 'sending', masked: '', code: '', error: '' });
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/profile/satyam/otp`, { method: 'POST' });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
-      setOtp({ phase: 'enter', masked: d.to, code: '', error: '' });
-    } catch (e) {
-      setOtp({ phase: 'idle', masked: '', code: '', error: e.message });
-    }
-  };
-
-  const verifyOtp = async () => {
-    setOtp((o) => ({ ...o, phase: 'verifying', error: '' }));
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/profile/satyam/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: otp.code }),
-      });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
-      try {
-        sessionStorage.setItem('satyam_token', JSON.stringify({ token: d.token, exp: Date.now() + d.expiresIn * 1000 }));
-      } catch {
-        /* storage blocked: the code is asked again next time */
-      }
-      setOtp({ phase: 'idle', masked: '', code: '', error: '' });
-      await loadSatyam(d.token);
-    } catch (e) {
-      setOtp((o) => ({ ...o, phase: 'enter', error: e.message }));
-    }
-  };
-
   // Helper to load demo data
   const loadDemoData = () => {
     setSenderEmail('sender.test.account@gmail.com');
@@ -1107,61 +1025,27 @@ Satyam Soni`
       <nav className="topnav" aria-label="Main">
         <a className="topnav-brand" href="#top">Job Hunter</a>
         <div className="topnav-links">
-          <a href="#hunter">Hunter</a>
-          <a href="#sender">Sender</a>
-          <a href="#status">Status</a>
-          <a href="#tailor">Resume Tailor</a>
+          <a href="#send">Send</a>
           <a href="#jobs">Jobs</a>
-          <a href="#manual">Manual</a>
+          <a href="#advanced">Advanced</a>
           <a href="#guide">Guide</a>
         </div>
-        <a className="btn topnav-cta" href="#extension">🧩 Extension</a>
       </nav>
 
       {/* Header Panel */}
       <header className="app-header" id="top">
         <div className="brand">
           <h1>Job Hunter</h1>
-          <p className="tagline">Find hiring posts, collect recruiter emails, apply automatically.</p>
-          <p>sslotsync.online ColdMailer • Created by Satyam Soni</p>
-        </div>
-
-        <div className="tech-stack-badges">
-          <div className="tech-badge react">React</div>
-          <div className="tech-badge node">Node.js</div>
-          <div className="tech-badge express">Express</div>
+          <p className="tagline">Press Satyam, verify, paste emails, send.</p>
         </div>
       </header>
 
-      {/* How it works */}
-      <section className="how-it-works" aria-label="How it works">
-        <h2 className="section-heading">How it works</h2>
-        <ol className="steps">
-          <li>
-            <span className="step-num">1</span>
-            <div>
-              <strong>Choose targets</strong>
-              <p>Pick the roles you want: freelancing, frontend, backend, full stack or remote.</p>
-            </div>
-          </li>
-          <li>
-            <span className="step-num">2</span>
-            <div>
-              <strong>Start hunting</strong>
-              <p>The server scans public hiring posts and collects the emails recruiters share.</p>
-            </div>
-          </li>
-          <li>
-            <span className="step-num">3</span>
-            <div>
-              <strong>Mails go out</strong>
-              <p>Your application and resume are sent in the background, one by one, no duplicates.</p>
-            </div>
-          </li>
-        </ol>
-      </section>
+      <SatyamSend apiBaseUrl={API_BASE_URL} />
+      <JobsBoard apiBaseUrl={API_BASE_URL} />
 
-      {/* Main Grid Layout */}
+      {/* Everything else: closed by default */}
+      <details className="advanced" id="advanced">
+        <summary>Advanced tools <span>auto hunter, sender setup, status, resume tailor, manual campaign</span></summary>
       <div className="grid-layout">
         
         {/* Left Side: Campaign Configuration Form */}
@@ -1170,7 +1054,6 @@ Satyam Soni`
           <SmtpSettings apiBaseUrl={API_BASE_URL} />
           <MailerStatus apiBaseUrl={API_BASE_URL} />
           <ResumeTailor apiBaseUrl={API_BASE_URL} />
-          <JobsBoard apiBaseUrl={API_BASE_URL} />
           <div className="card" id="manual">
             <div className="card-head">
               <div>
@@ -1182,15 +1065,6 @@ Satyam Soni`
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={applySatyamProfile}
-                  className="btn"
-                  disabled={isCampaignRunning}
-                  title="Fills sender, subject, body and attaches the resume"
-                >
-                  👤 Satyam
-                </button>
-                <button
-                  type="button"
                   onClick={loadDemoData}
                   className="btn btn-secondary"
                   disabled={isCampaignRunning}
@@ -1199,37 +1073,6 @@ Satyam Soni`
                 </button>
               </div>
             </div>
-
-            {(otp.phase !== 'idle' || otp.error) && (
-              <div className="otp-box" role="dialog" aria-label="Verification code">
-                {otp.phase === 'sending' && <p>Sending a code...</p>}
-                {(otp.phase === 'enter' || otp.phase === 'verifying') && (
-                  <>
-                    <p>
-                      A 6 digit code was sent to <b>{otp.masked}</b>. Enter it to load the Satyam profile.
-                    </p>
-                    <div className="otp-row">
-                      <input
-                        className="input-field otp-input"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        maxLength={6}
-                        placeholder="123456"
-                        value={otp.code}
-                        onChange={(e) => setOtp((o) => ({ ...o, code: e.target.value.replace(/\D/g, '') }))}
-                        onKeyDown={(e) => e.key === 'Enter' && otp.code.length === 6 && verifyOtp()}
-                      />
-                      <button type="button" className="btn" onClick={verifyOtp} disabled={otp.code.length !== 6 || otp.phase === 'verifying'}>
-                        {otp.phase === 'verifying' ? 'Checking...' : 'Verify'}
-                      </button>
-                      <button type="button" className="btn btn-secondary" onClick={applySatyamProfile}>Resend</button>
-                      <button type="button" className="btn btn-secondary" onClick={() => setOtp({ phase: 'idle', masked: '', code: '', error: '' })}>Cancel</button>
-                    </div>
-                  </>
-                )}
-                {otp.error && <p className="smtp-msg err">{otp.error}</p>}
-              </div>
-            )}
 
             <form onSubmit={handleLaunchCampaign}>
               
@@ -1902,6 +1745,7 @@ Satyam Soni`
         </section>
 
       </div>
+      </details>
 
       <Guide />
 
