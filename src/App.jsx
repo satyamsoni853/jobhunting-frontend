@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
+import JobTargets from './JobTargets.jsx';
 
 // Helper to parse CSV properly (respecting quoted values and commas within quotes)
 function parseCSV(text) {
@@ -1031,6 +1032,7 @@ Satyam Soni`
         
         {/* Left Side: Campaign Configuration Form */}
         <section className="left-side">
+          <JobTargets apiBaseUrl={API_BASE_URL} />
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0 }}>✉️ Dispatch Campaign</h2>
