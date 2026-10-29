@@ -36,7 +36,7 @@ export default function MailerStatus({ apiBaseUrl }) {
 
   useEffect(() => {
     const first = setTimeout(load, 0); // not synchronously, the effect itself must not set state
-    const t = setInterval(load, 30000);
+    const t = setInterval(load, 8000);
     return () => {
       clearTimeout(first);
       clearInterval(t);
@@ -61,6 +61,7 @@ export default function MailerStatus({ apiBaseUrl }) {
 
       {data && (
         <>
+          {data.settings.enabled === false && <div className="dry-banner">⏸ Auto-send is OFF on the server (AUTO_SEND_ENABLED=false), so nothing is queued. Set it to true in Render env.</div>}
           {data.settings.dryRun && <div className="dry-banner">🧪 Dry run is ON: mails are built and logged, nothing is really sent.</div>}
 
           <div className="status-grid">

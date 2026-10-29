@@ -1043,6 +1043,7 @@ Satyam Soni`
 
       <SatyamSend apiBaseUrl={API_BASE_URL} />
       <JobTargets apiBaseUrl={API_BASE_URL} />
+      <MailerStatus apiBaseUrl={API_BASE_URL} />
       <JobsBoard apiBaseUrl={API_BASE_URL} />
 
       {/* Everything else: closed by default */}
@@ -1053,7 +1054,6 @@ Satyam Soni`
         {/* Left Side: Campaign Configuration Form */}
         <section className="left-side">
           <SmtpSettings apiBaseUrl={API_BASE_URL} />
-          <MailerStatus apiBaseUrl={API_BASE_URL} />
           <ResumeTailor apiBaseUrl={API_BASE_URL} />
           <div className="card" id="manual">
             <div className="card-head">
