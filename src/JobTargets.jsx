@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 export default function JobTargets({ apiBaseUrl }) {
   const [categories, setCategories] = useState([]);
   const [selected, setSelected] = useState([]);
-  const [expanded, setExpanded] = useState(null);
   const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'saving' | 'saved' | 'error'
 
   useEffect(() => {
@@ -19,8 +18,9 @@ export default function JobTargets({ apiBaseUrl }) {
       .catch(() => setStatus('error'));
   }, [apiBaseUrl]);
 
-  const toggle = async (key) => {
-    const next = selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key];
+  const toggle = (key) => save(selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key]);
+
+  const save = async (next) => {
     setSelected(next);
     setStatus('saving');
     try {
@@ -95,6 +95,26 @@ export default function JobTargets({ apiBaseUrl }) {
         Step 1: choose the roles you want. Select one or more, each comes with 20 search keywords.
       </p>
 
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ fontSize: '12px' }}
+          onClick={() => save(categories.map((c) => c.key))}
+        >
+          Select all
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ fontSize: '12px' }}
+          onClick={() => save([])}
+          disabled={selected.length === 0}
+        >
+          Clear
+        </button>
+      </div>
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
         {categories.map((c) => {
           const on = selected.includes(c.key);
@@ -120,6 +140,47 @@ export default function JobTargets({ apiBaseUrl }) {
         {(status === 'ready' || status === 'saved') &&
           `${selected.length} selected • ${totalQueries} search keywords${status === 'saved' ? ' • saved' : ''}`}
       </div>
+
+      {selected.length > 0 && (
+        <div
+          style={{
+            marginTop: '14px',
+            padding: '12px',
+            background: 'var(--bg-terminal)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            maxHeight: '260px',
+            overflowY: 'auto',
+          }}
+        >
+          <h3 style={{ margin: '0 0 8px', fontSize: '14px' }}>🔍 Keywords that will be searched ({totalQueries})</h3>
+          {categories
+            .filter((c) => selected.includes(c.key))
+            .map((c) => (
+              <div key={c.key} style={{ marginBottom: '10px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)', marginBottom: '4px' }}>
+                  {c.label} ({c.queries.length})
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {c.queries.map((q) => (
+                    <span
+                      key={q}
+                      style={{
+                        fontSize: '11px',
+                        padding: '3px 8px',
+                        borderRadius: '9999px',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {q}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
 
       <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
         <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>▶ Step 2: Start hunting</h3>
@@ -159,28 +220,6 @@ export default function JobTargets({ apiBaseUrl }) {
           {!huntError && !hunt && 'Source: Hacker News "Who is hiring?" (public). Mails go out in the background.'}
         </div>
       </div>
-
-      {categories
-        .filter((c) => selected.includes(c.key))
-        .map((c) => (
-          <div key={c.key} style={{ marginTop: '10px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ fontSize: '12px' }}
-              onClick={() => setExpanded(expanded === c.key ? null : c.key)}
-            >
-              {expanded === c.key ? '▾' : '▸'} {c.label} keywords ({c.queries.length})
-            </button>
-            {expanded === c.key && (
-              <ul style={{ margin: '8px 0 0', paddingLeft: '20px', fontSize: '12px', opacity: 0.85 }}>
-                {c.queries.map((q) => (
-                  <li key={q}>{q}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
     </div>
   );
 }
