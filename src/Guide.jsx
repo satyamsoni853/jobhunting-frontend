@@ -34,7 +34,7 @@ const TOPICS = [
           <li>Search for <b>App passwords</b>, create one named &quot;ColdMailer&quot;.</li>
           <li>Copy the 16 characters. Use it as the SMTP password, never your real Gmail password.</li>
         </ol>
-        <p>You can delete the App Password from the same page whenever you want.</p>
+        <p>Enter the Gmail address and this App Password in the <b>Sender Gmail</b> card and press Verify. The server checks it with Gmail and keeps it encrypted. You can delete the App Password from the Google page whenever you want.</p>
       </>
     ),
   },
@@ -100,7 +100,8 @@ const TOPICS = [
       <ul>
         <li><b>&quot;Wrong access key&quot;</b>: the key here differs from the server&apos;s AUTO_API_KEY.</li>
         <li><b>Stuck on Loading:</b> the free server sleeps after inactivity. Wait up to a minute and reload.</li>
-        <li><b>Posts scanned but 0 queued:</b> auto-send is switched off on the server, or no SMTP login is set.</li>
+        <li><b>Posts scanned but 0 queued:</b> auto-send is switched off on the server, or the Sender Gmail card is not connected.</li>
+        <li><b>Sender shows &quot;Not connected&quot; after a while:</b> the free server restarted and forgot the login. Tick &quot;Remember on this browser&quot; to reconnect automatically, or connect again.</li>
         <li><b>SMTP authentication failed:</b> use an App Password, with 2-Step Verification turned on.</li>
       </ul>
     ),

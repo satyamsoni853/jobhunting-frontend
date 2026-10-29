@@ -5,6 +5,7 @@ import Guide from './Guide.jsx';
 import ResumeTailor from './ResumeTailor.jsx';
 import JobsBoard from './JobsBoard.jsx';
 import MailerStatus from './MailerStatus.jsx';
+import SmtpSettings from './SmtpSettings.jsx';
 
 // Helper to parse CSV properly (respecting quoted values and commas within quotes)
 function parseCSV(text) {
@@ -1060,6 +1061,7 @@ Satyam Soni`
         <a className="topnav-brand" href="#top">Job Hunter</a>
         <div className="topnav-links">
           <a href="#hunter">Hunter</a>
+          <a href="#sender">Sender</a>
           <a href="#status">Status</a>
           <a href="#tailor">Resume Tailor</a>
           <a href="#jobs">Jobs</a>
@@ -1118,6 +1120,7 @@ Satyam Soni`
         {/* Left Side: Campaign Configuration Form */}
         <section className="left-side">
           <JobTargets apiBaseUrl={API_BASE_URL} />
+          <SmtpSettings apiBaseUrl={API_BASE_URL} />
           <MailerStatus apiBaseUrl={API_BASE_URL} />
           <ResumeTailor apiBaseUrl={API_BASE_URL} />
           <JobsBoard apiBaseUrl={API_BASE_URL} />
