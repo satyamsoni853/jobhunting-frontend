@@ -14,6 +14,23 @@ const readToken = () => {
 };
 
 const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi;
+
+// The free server sleeps when idle and can need a minute to wake. Never wait for ever: give up with a clear message.
+async function fetchT(url, options = {}, ms = 60000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } catch (e) {
+    throw new Error(
+      e.name === 'AbortError'
+        ? 'The server did not answer in time. It may still be waking up: wait a minute and try again.'
+        : 'Could not reach the server. Check your internet and try again.'
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+}
 const LABEL = { success: 'Sent', 'dry-run': 'Test', followup: 'Follow-up', skipped: 'Skipped', failed: 'Failed' };
 const TONE = { success: 'good', 'dry-run': 'good', followup: 'good', skipped: 'low', failed: 'bad' };
 
@@ -43,7 +60,7 @@ export default function SatyamSend({ apiBaseUrl }) {
 
   const call = useCallback(
     async (path, options = {}) => {
-      const res = await fetch(`${apiBaseUrl}${path}`, {
+      const res = await fetchT(`${apiBaseUrl}${path}`, {
         ...options,
         headers: { 'Content-Type': 'application/json', 'X-Profile-Token': readToken(), ...(options.headers || {}) },
       });
@@ -90,7 +107,7 @@ export default function SatyamSend({ apiBaseUrl }) {
     setPhase('checking');
     setError('');
     try {
-      const res = await fetch(`${apiBaseUrl}/api/profile/satyam/verify`, {
+      const res = await fetchT(`${apiBaseUrl}/api/profile/satyam/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: code.trim() }),
@@ -199,6 +216,7 @@ export default function SatyamSend({ apiBaseUrl }) {
               </div>
             </div>
           )}
+          {phase === 'checking' && <p className="card-sub">Checking... if the server was asleep this can take up to a minute.</p>}
           {error && <p className="smtp-msg err">{error}</p>}
         </>
       ) : (
