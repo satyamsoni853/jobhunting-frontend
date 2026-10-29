@@ -108,6 +108,11 @@ export default function JobTargets({ apiBaseUrl }) {
     pinged.current = agent !== null;
   }, [agent]);
 
+  // hand the Access Key (typed in Step 2) to the extension, so config.js needs no editing
+  useEffect(() => {
+    if (accessKey) window.postMessage({ src: 'jh-site', type: 'SET_KEY', key: accessKey.trim() }, window.location.origin);
+  }, [accessKey, agent === null]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const agentCmd = (type) => window.postMessage({ src: 'jh-site', type }, window.location.origin);
 
   const totalQueries = categories
@@ -255,7 +260,7 @@ export default function JobTargets({ apiBaseUrl }) {
         </p>
         {agent === null ? (
           <div style={{ fontSize: '13px', opacity: 0.85 }}>
-            ⚠️ Extension not detected. Install it from the Guide (zip), put your Access Key in its config.js, reload it at chrome://extensions, then reload this page.
+            ⚠️ Extension not detected. Install it from the Guide (zip), reload it at chrome://extensions, then reload this page.
           </div>
         ) : (
           <>
@@ -275,6 +280,7 @@ export default function JobTargets({ apiBaseUrl }) {
             <div style={{ fontSize: '12px', marginTop: '8px', opacity: 0.85 }}>
               {selected.length === 0 && 'Choose at least one role above. '}
               {agent.running && `Search ${agent.index}/${agent.total}: "${agent.query}" • `}
+              {agent.status !== 'idle' && !agent.running && !agent.message && `Finished • `}
               {agent.status !== 'idle' && `${agent.posts} posts read • ${agent.emails} emails sent to the mailer`}
               {agent.minutesLeft !== null && ` • ${agent.minutesLeft} min left today`}
               {agent.message && ` • ${agent.message}`}
