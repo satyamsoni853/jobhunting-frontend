@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
 // Live view of the server's mailer: counts, settings and the last results. Needs the Access Key from Auto Hunter.
-const LABEL = { success: 'Sent', 'dry-run': 'Dry run', followup: 'Follow-up', skipped: 'Skipped', failed: 'Failed' };
-const TONE = { success: 'good', 'dry-run': 'good', followup: 'good', skipped: 'low', failed: 'bad' };
 
 export default function MailerStatus({ apiBaseUrl }) {
   const [data, setData] = useState(null);
@@ -50,7 +48,7 @@ export default function MailerStatus({ apiBaseUrl }) {
       <div className="card-head">
         <div>
           <h2>📬 Mailer Status</h2>
-          <p className="card-sub" style={{ margin: 0 }}>What the server has sent, who replied, and what is waiting.</p>
+          <p className="card-sub" style={{ margin: 0 }}>The numbers. The full list is in Mail list below.</p>
         </div>
         <button type="button" className="btn btn-secondary" onClick={load} disabled={busy}>
           {busy ? 'Refreshing...' : '↻ Refresh'}
@@ -78,21 +76,6 @@ export default function MailerStatus({ apiBaseUrl }) {
             {Math.round(data.settings.minFit * 100)}% · Storage:{' '}
             {data.settings.storage === 'database' ? 'database (kept across restarts)' : 'files (lost when the free server restarts)'}
           </p>
-
-          <div className="tailor-label">Recent</div>
-          {data.recent.length === 0 ? (
-            <p className="card-sub">Nothing yet.</p>
-          ) : (
-            <ul className="recent-list">
-              {data.recent.slice(0, 12).map((h, i) => (
-                <li key={`${h.email}-${h.at}-${i}`}>
-                  <span className={`fit-badge ${TONE[h.status] || 'low'}`}>{LABEL[h.status] || h.status}</span>
-                  <span className="recent-mail">{h.email}</span>
-                  <span className="recent-note">{h.reason || h.error || h.subject || ''}</span>
-                </li>
-              ))}
-            </ul>
-          )}
         </>
       )}
     </div>

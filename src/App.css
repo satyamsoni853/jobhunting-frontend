@@ -1252,3 +1252,20 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 
 .jobs-sel { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; }
 .jobs-sel b { color: var(--primary); font-weight: 600; }
+
+/* Mail list */
+.ml-tabs { display: flex; gap: 6px; margin: 14px 0 10px; flex-wrap: wrap; }
+.ml-tab { padding: 8px 14px; border-radius: 9999px; border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.ml-tab.on { border-color: var(--primary); color: var(--primary); background: rgba(255, 107, 0, 0.08); font-weight: 600; }
+.ml-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
+.ml-list { list-style: none; margin: 0; padding: 0; max-height: 460px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; }
+.ml-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border-color); }
+.ml-list li:last-child { border-bottom: 0; }
+.ml-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ml-main b { overflow-wrap: anywhere; font-size: 0.92rem; }
+.ml-sub { font-size: 0.78rem; color: var(--text-muted); overflow-wrap: anywhere; }
+.ml-sub a { color: var(--primary); }
+.ml-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.ml-actions .btn { padding: 6px 10px; font-size: 0.8rem; }
+.ml-empty { color: var(--text-muted); font-size: 0.88rem; justify-content: center !important; }
+@media (max-width: 640px) { .ml-list li { flex-direction: column; align-items: stretch; } .ml-actions .btn { flex: 1; } }

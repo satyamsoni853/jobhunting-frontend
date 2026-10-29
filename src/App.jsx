@@ -6,6 +6,7 @@ import ResumeTailor from './ResumeTailor.jsx';
 import JobsBoard from './JobsBoard.jsx';
 import SatyamSend from './SatyamSend.jsx';
 import MailerStatus from './MailerStatus.jsx';
+import MailList from './MailList.jsx';
 import SmtpSettings from './SmtpSettings.jsx';
 
 // Helper to parse CSV properly (respecting quoted values and commas within quotes)
@@ -1044,6 +1045,7 @@ Satyam Soni`
       <SatyamSend apiBaseUrl={API_BASE_URL} />
       <JobTargets apiBaseUrl={API_BASE_URL} />
       <MailerStatus apiBaseUrl={API_BASE_URL} />
+      <MailList apiBaseUrl={API_BASE_URL} />
       <JobsBoard apiBaseUrl={API_BASE_URL} />
 
       {/* Everything else: closed by default */}
