@@ -109,7 +109,7 @@ const TOPICS = [
 
 function ExtensionDownload() {
   return (
-    <div className="ext-card">
+    <div className="ext-card" id="extension">
       <div>
         <h3>🧩 Chrome Extension: SlotSync LeadFlow</h3>
         <p>
@@ -126,7 +126,7 @@ function ExtensionDownload() {
 
 export default function Guide() {
   return (
-    <section className="guide" aria-label="Guide">
+    <section className="guide" id="guide" aria-label="Guide">
       <ExtensionDownload />
       <h2 className="section-heading" style={{ marginTop: '20px' }}>Guide</h2>
       <div className="guide-list">

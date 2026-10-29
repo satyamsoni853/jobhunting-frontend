@@ -89,7 +89,7 @@ export default function JobTargets({ apiBaseUrl }) {
     .reduce((n, c) => n + c.queries.length, 0);
 
   return (
-    <div className="card">
+    <div className="card" id="hunter">
       <h2 style={{ marginTop: 0 }}>🎯 Auto Hunter</h2>
       <p style={{ opacity: 0.7, fontSize: '13px', marginTop: 0 }}>
         Step 1: choose the roles you want. Select one or more, each comes with 20 search keywords.
@@ -115,7 +115,7 @@ export default function JobTargets({ apiBaseUrl }) {
         </button>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div className="target-chips">
         {categories.map((c) => {
           const on = selected.includes(c.key);
           return (
@@ -204,7 +204,7 @@ export default function JobTargets({ apiBaseUrl }) {
               fontFamily: 'inherit',
             }}
           />
-          <button type="button" className="btn" onClick={startHunt} disabled={!accessKey || hunt?.running}>
+          <button type="button" className="btn hunt-start" onClick={startHunt} disabled={!accessKey || hunt?.running}>
             {hunt?.running ? 'Hunting...' : '▶ Start'}
           </button>
         </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './App.css';
 import JobTargets from './JobTargets.jsx';
 import Guide from './Guide.jsx';
+import ResumeTailor from './ResumeTailor.jsx';
 
 // Helper to parse CSV properly (respecting quoted values and commas within quotes)
 function parseCSV(text) {
@@ -1052,8 +1053,20 @@ Satyam Soni`
 
   return (
     <div className="app-container">
+      {/* Top navigation */}
+      <nav className="topnav" aria-label="Main">
+        <a className="topnav-brand" href="#top">Job Hunter</a>
+        <div className="topnav-links">
+          <a href="#hunter">Hunter</a>
+          <a href="#tailor">Resume Tailor</a>
+          <a href="#manual">Manual</a>
+          <a href="#guide">Guide</a>
+        </div>
+        <a className="btn topnav-cta" href="#extension">🧩 Extension</a>
+      </nav>
+
       {/* Header Panel */}
-      <header className="app-header">
+      <header className="app-header" id="top">
         <div className="brand">
           <h1>Job Hunter</h1>
           <p className="tagline">Find hiring posts, collect recruiter emails, apply automatically.</p>
@@ -1095,16 +1108,15 @@ Satyam Soni`
         </ol>
       </section>
 
-      <Guide />
-
       {/* Main Grid Layout */}
       <div className="grid-layout">
         
         {/* Left Side: Campaign Configuration Form */}
         <section className="left-side">
           <JobTargets apiBaseUrl={API_BASE_URL} />
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <ResumeTailor apiBaseUrl={API_BASE_URL} />
+          <div className="card" id="manual">
+            <div className="card-head">
               <div>
                 <h2 style={{ margin: 0 }}>✉️ Manual Campaign</h2>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', opacity: 0.7 }}>
@@ -1201,7 +1213,7 @@ Satyam Soni`
                     )}
                     {verifyStatus === 'idle' && (
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        Requires a secure 16-character Gmail **App Password**, not your main account password.
+                        Requires a secure 16-character Gmail <strong>App Password</strong>, not your main account password.
                       </div>
                     )}
                   </div>
@@ -1703,7 +1715,7 @@ Satyam Soni`
         <section className="right-side">
           
           {/* Diagnostic Console Panel */}
-          <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div className="card console-card">
             <h2>🛰️ Operational Console</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
               Tracks email execution status, API loop responses, and SMTP logs.
@@ -1789,7 +1801,7 @@ Satyam Soni`
                 <div className="checklist">
                   <div className="check-item">
                     <span className="check-dot">•</span>
-                    <span>Express server utilizes **1.5 second throttling delays** between mails to prevent anti-spam triggers.</span>
+                    <span>Express server utilizes <strong>1.5 second throttling delays</strong> between mails to prevent anti-spam triggers.</span>
                   </div>
                   <div className="check-item">
                     <span className="check-dot">•</span>
@@ -1803,6 +1815,8 @@ Satyam Soni`
         </section>
 
       </div>
+
+      <Guide />
 
       <footer className="footer-text">
         <p>sslotsync.online ColdMailer Outbound Dashboard • Powered by React, Express, Multer, and Nodemailer • Created by Satyam Soni</p>
