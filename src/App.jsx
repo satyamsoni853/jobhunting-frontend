@@ -285,6 +285,44 @@ Satyam Soni`
     }
   };
 
+  // One click "Satyam" profile: sender, subject and body from the server (same text the auto-mailer sends),
+  // plus the resume PDF when the access key is saved in this browser (the resume is not public).
+  const applySatyamProfile = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/profile/satyam`);
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const p = await res.json();
+      setSenderEmail(p.email);
+      setSubject(p.subject);
+      setBody(p.body);
+      addTerminalLog('success', 'Satyam profile loaded: sender, subject and body filled. Enter your App Password.');
+    } catch (e) {
+      addTerminalLog('error', `Could not load the Satyam profile: ${e.message}`);
+      return;
+    }
+
+    let key = '';
+    try {
+      key = localStorage.getItem('jobhunting_key') || '';
+    } catch {
+      /* storage blocked */
+    }
+    if (!key) {
+      addTerminalLog('warning', 'Resume not attached: enter the access key in Auto Hunter (Step 2), then click Satyam again.');
+      return;
+    }
+    try {
+      const r = await fetch(`${API_BASE_URL}/api/profile/satyam/resume`, { headers: { 'X-API-Key': key } });
+      if (r.status === 401) throw new Error('wrong access key');
+      if (!r.ok) throw new Error(`server returned ${r.status}`);
+      const blob = await r.blob();
+      setResumeFile(new File([blob], 'Satyam_Soni_Resume.pdf', { type: 'application/pdf' }));
+      addTerminalLog('success', 'Resume attached: Satyam_Soni_Resume.pdf');
+    } catch (e) {
+      addTerminalLog('error', `Resume not attached: ${e.message}`);
+    }
+  };
+
   // Helper to load demo data
   const loadDemoData = () => {
     setSenderEmail('sender.test.account@gmail.com');
@@ -1073,14 +1111,25 @@ Satyam Soni`
                   Prefer to send yourself? Upload a CSV and dispatch with your own SMTP login.
                 </p>
               </div>
-              <button 
-                type="button" 
-                onClick={loadDemoData} 
-                className="btn btn-secondary"
-                disabled={isCampaignRunning}
-              >
-                🪄 Load Demo Fields
-              </button>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={applySatyamProfile}
+                  className="btn"
+                  disabled={isCampaignRunning}
+                  title="Fills sender, subject, body and attaches the resume"
+                >
+                  👤 Satyam
+                </button>
+                <button
+                  type="button"
+                  onClick={loadDemoData}
+                  className="btn btn-secondary"
+                  disabled={isCampaignRunning}
+                >
+                  🪄 Load Demo Fields
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleLaunchCampaign}>
