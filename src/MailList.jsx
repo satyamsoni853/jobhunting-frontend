@@ -71,6 +71,25 @@ export default function MailList({ apiBaseUrl }) {
     }
   };
 
+  // every address ever found, as a CSV (the file request carries the key, so it is fetched, not linked)
+  const downloadAll = async () => {
+    setBusy('csv');
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/mail/leads.csv`, { headers: { 'X-API-Key': readKey() } });
+      if (!res.ok) throw new Error(res.status === 401 ? 'Wrong access key.' : `Server error ${res.status}`);
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'all-emails.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  };
+
   const queue = data?.queue || [];
   const firsts = queue.filter((j) => j.type === 'first');
 
@@ -85,6 +104,17 @@ export default function MailList({ apiBaseUrl }) {
           ↻ Refresh
         </button>
       </div>
+
+      {data && (
+        <div className="ml-bar">
+          <span>
+            {data.leadsTotal} email{data.leadsTotal === 1 ? '' : 's'} saved for good. Nobody gets a second mail within 7 days.
+          </span>
+          <button type="button" className="btn btn-secondary" disabled={busy === 'csv'} onClick={downloadAll}>
+            ⬇ All emails (CSV)
+          </button>
+        </div>
+      )}
 
       <div className="ml-tabs" role="tablist">
         {[
