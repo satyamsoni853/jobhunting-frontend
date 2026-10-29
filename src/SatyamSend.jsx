@@ -25,7 +25,8 @@ async function fetchT(url, options = {}, ms = 60000) {
     throw new Error(
       e.name === 'AbortError'
         ? 'The server did not answer in time. It may still be waking up: wait a minute and try again.'
-        : 'Could not reach the server. Check your internet and try again.'
+        : 'Could not reach the server. Check your internet and try again.',
+      { cause: e }
     );
   } finally {
     clearTimeout(timer);
