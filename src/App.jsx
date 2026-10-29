@@ -291,39 +291,86 @@ Satyam Soni`
 
   // One click "Satyam" profile: sender, subject and body from the server (same text the auto-mailer sends),
   // plus the resume PDF when the access key is saved in this browser (the resume is not public).
-  const applySatyamProfile = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/profile/satyam`);
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const p = await res.json();
-      setSenderEmail(p.email);
-      setSubject(p.subject);
-      setBody(p.body);
-      addTerminalLog('success', 'Satyam profile loaded: sender, subject and body filled. Enter your App Password.');
-    } catch (e) {
-      addTerminalLog('error', `Could not load the Satyam profile: ${e.message}`);
-      return;
-    }
+  // The Satyam profile and resume are behind a code mailed to the owner. The token lasts 30 minutes in this tab.
+  const [otp, setOtp] = useState({ phase: 'idle', masked: '', code: '', error: '' }); // idle | sending | enter | verifying
 
-    let key = '';
+  const getProfileToken = () => {
     try {
-      key = localStorage.getItem('jobhunting_key') || '';
+      const t = JSON.parse(sessionStorage.getItem('satyam_token') || 'null');
+      return t && t.exp > Date.now() ? t.token : '';
     } catch {
-      /* storage blocked */
+      return '';
     }
-    if (!key) {
-      addTerminalLog('warning', 'Resume not attached: enter the access key in Auto Hunter (Step 2), then click Satyam again.');
-      return;
-    }
+  };
+
+  // Fills sender, subject, body and attaches the resume. Returns false when the token was rejected.
+  const loadSatyam = async (token) => {
+    const headers = { 'X-Profile-Token': token };
+    const res = await fetch(`${API_BASE_URL}/api/profile/satyam`, { headers });
+    if (res.status === 401) return false;
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    const p = await res.json();
+    setSenderEmail(p.email);
+    setSubject(p.subject);
+    setBody(p.body);
+    addTerminalLog('success', 'Satyam profile loaded: sender, subject and body filled. Enter your App Password.');
+
     try {
-      const r = await fetch(`${API_BASE_URL}/api/profile/satyam/resume`, { headers: { 'X-API-Key': key } });
-      if (r.status === 401) throw new Error('wrong access key');
+      const r = await fetch(`${API_BASE_URL}/api/profile/satyam/resume`, { headers });
       if (!r.ok) throw new Error(`server returned ${r.status}`);
-      const blob = await r.blob();
-      setResumeFile(new File([blob], 'Satyam_Soni_Resume.pdf', { type: 'application/pdf' }));
+      setResumeFile(new File([await r.blob()], 'Satyam_Soni_Resume.pdf', { type: 'application/pdf' }));
       addTerminalLog('success', 'Resume attached: Satyam_Soni_Resume.pdf');
     } catch (e) {
       addTerminalLog('error', `Resume not attached: ${e.message}`);
+    }
+    return true;
+  };
+
+  const applySatyamProfile = async () => {
+    const token = getProfileToken();
+    if (token) {
+      try {
+        if (await loadSatyam(token)) return;
+      } catch (e) {
+        addTerminalLog('error', `Could not load the Satyam profile: ${e.message}`);
+        return;
+      }
+      try {
+        sessionStorage.removeItem('satyam_token'); // expired or rejected: ask for a new code
+      } catch {
+        /* storage blocked */
+      }
+    }
+    setOtp({ phase: 'sending', masked: '', code: '', error: '' });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/profile/satyam/otp`, { method: 'POST' });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
+      setOtp({ phase: 'enter', masked: d.to, code: '', error: '' });
+    } catch (e) {
+      setOtp({ phase: 'idle', masked: '', code: '', error: e.message });
+    }
+  };
+
+  const verifyOtp = async () => {
+    setOtp((o) => ({ ...o, phase: 'verifying', error: '' }));
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/profile/satyam/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: otp.code }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
+      try {
+        sessionStorage.setItem('satyam_token', JSON.stringify({ token: d.token, exp: Date.now() + d.expiresIn * 1000 }));
+      } catch {
+        /* storage blocked: the code is asked again next time */
+      }
+      setOtp({ phase: 'idle', masked: '', code: '', error: '' });
+      await loadSatyam(d.token);
+    } catch (e) {
+      setOtp((o) => ({ ...o, phase: 'enter', error: e.message }));
     }
   };
 
@@ -1152,6 +1199,37 @@ Satyam Soni`
                 </button>
               </div>
             </div>
+
+            {(otp.phase !== 'idle' || otp.error) && (
+              <div className="otp-box" role="dialog" aria-label="Verification code">
+                {otp.phase === 'sending' && <p>Sending a code...</p>}
+                {(otp.phase === 'enter' || otp.phase === 'verifying') && (
+                  <>
+                    <p>
+                      A 6 digit code was sent to <b>{otp.masked}</b>. Enter it to load the Satyam profile.
+                    </p>
+                    <div className="otp-row">
+                      <input
+                        className="input-field otp-input"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        placeholder="123456"
+                        value={otp.code}
+                        onChange={(e) => setOtp((o) => ({ ...o, code: e.target.value.replace(/\D/g, '') }))}
+                        onKeyDown={(e) => e.key === 'Enter' && otp.code.length === 6 && verifyOtp()}
+                      />
+                      <button type="button" className="btn" onClick={verifyOtp} disabled={otp.code.length !== 6 || otp.phase === 'verifying'}>
+                        {otp.phase === 'verifying' ? 'Checking...' : 'Verify'}
+                      </button>
+                      <button type="button" className="btn btn-secondary" onClick={applySatyamProfile}>Resend</button>
+                      <button type="button" className="btn btn-secondary" onClick={() => setOtp({ phase: 'idle', masked: '', code: '', error: '' })}>Cancel</button>
+                    </div>
+                  </>
+                )}
+                {otp.error && <p className="smtp-msg err">{otp.error}</p>}
+              </div>
+            )}
 
             <form onSubmit={handleLaunchCampaign}>
               
