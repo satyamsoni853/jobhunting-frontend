@@ -980,8 +980,11 @@ label {
 }
 
 .guide-item summary::-webkit-details-marker { display: none; }
-.guide-item summary::after { content: '+'; float: right; color: var(--text-secondary); }
+.guide-item summary { position: relative; padding-right: 52px !important; }
+.guide-item summary::after { content: '+'; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; display: grid; place-items: center; font-size: 1.3rem; line-height: 1; color: var(--primary); border: 1px solid var(--border-glow); border-radius: 50%; background: rgba(255, 107, 0, 0.08); transition: background 0.2s, transform 0.2s; }
+.guide-item summary:hover::after { background: rgba(255, 107, 0, 0.2); }
 .guide-item[open] summary::after { content: '–'; }
+.guide-item summary { padding-right: 52px; }
 
 .guide-body {
   padding: 0 16px 16px;
@@ -1238,7 +1241,9 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .advanced { border: 1px solid var(--border-color); border-radius: 14px; padding: 0 16px; background: rgba(255, 255, 255, 0.02); }
 .advanced > summary { cursor: pointer; padding: 16px 0; font-weight: 700; list-style: none; }
 .advanced > summary::-webkit-details-marker { display: none; }
-.advanced > summary::after { content: '+'; float: right; color: var(--text-secondary); }
+.advanced > summary { position: relative; padding-right: 52px !important; }
+.advanced > summary::after { content: '+'; position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; display: grid; place-items: center; font-size: 1.3rem; line-height: 1; color: var(--primary); border: 1px solid var(--border-glow); border-radius: 50%; background: rgba(255, 107, 0, 0.08); transition: background 0.2s, transform 0.2s; }
+.advanced > summary:hover::after { background: rgba(255, 107, 0, 0.2); }
 .advanced[open] > summary::after { content: '–'; }
 .advanced > summary span { display: block; font-weight: 400; font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
 .advanced[open] { padding-bottom: 16px; }
