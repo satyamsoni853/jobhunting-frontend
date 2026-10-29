@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
 import JobTargets from './JobTargets.jsx';
+import Guide from './Guide.jsx';
 
 // Helper to parse CSV properly (respecting quoted values and commas within quotes)
 function parseCSV(text) {
@@ -1055,6 +1056,8 @@ Satyam Soni`
           </li>
         </ol>
       </section>
+
+      <Guide />
 
       {/* Main Grid Layout */}
       <div className="grid-layout">

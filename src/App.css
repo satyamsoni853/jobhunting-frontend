@@ -959,3 +959,52 @@ label {
   .app-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .brand h1 { font-size: 2rem; }
 }
+
+/* Guide */
+.guide-list {
+  display: grid;
+  gap: 8px;
+}
+
+.guide-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.guide-item summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  font-weight: 600;
+  list-style: none;
+}
+
+.guide-item summary::-webkit-details-marker { display: none; }
+.guide-item summary::after { content: '+'; float: right; color: var(--text-secondary); }
+.guide-item[open] summary::after { content: '–'; }
+
+.guide-body {
+  padding: 0 16px 16px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.guide-body p, .guide-body ol, .guide-body ul { margin-bottom: 8px; }
+.guide-body ol, .guide-body ul { padding-left: 20px; }
+.guide-body li { margin-bottom: 4px; }
+
+.guide-code {
+  display: block;
+  margin: 6px 0;
+  padding: 8px 10px;
+  background: var(--bg-terminal);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.guide-warn { color: var(--warning); }
