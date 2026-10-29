@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Multiselect of job categories. Each category carries 20 LinkedIn search queries,
 // the extension searches the queries of every selected category.
@@ -83,6 +83,32 @@ export default function JobTargets({ apiBaseUrl }) {
     const t = setInterval(() => fetchHunt().catch((e) => setHuntError(e.message)), 2000);
     return () => clearInterval(t);
   }, [hunt?.running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // LinkedIn agent: the Chrome extension (bridge.js) runs the searches in the user's own logged-in browser.
+  // The site only sends Start/Stop and shows progress. No key or LinkedIn data passes through this page.
+  const [agent, setAgent] = useState(null); // null = extension not found
+  const pinged = useRef(false);
+
+  useEffect(() => {
+    const onMsg = (e) => {
+      const d = e.data;
+      if (e.source !== window || !d || d.src !== 'jh-agent') return;
+      setAgent(d.state);
+    };
+    window.addEventListener('message', onMsg);
+    const ping = () => window.postMessage({ src: 'jh-site', type: 'PING' }, window.location.origin);
+    ping();
+    const t = setInterval(() => !pinged.current && ping(), 3000);
+    return () => {
+      window.removeEventListener('message', onMsg);
+      clearInterval(t);
+    };
+  }, []);
+  useEffect(() => {
+    pinged.current = agent !== null;
+  }, [agent]);
+
+  const agentCmd = (type) => window.postMessage({ src: 'jh-site', type }, window.location.origin);
 
   const totalQueries = categories
     .filter((c) => selected.includes(c.key))
@@ -219,6 +245,43 @@ export default function JobTargets({ apiBaseUrl }) {
           )}
           {!huntError && !hunt && 'Source: Hacker News "Who is hiring?" (public). Mails go out in the background.'}
         </div>
+      </div>
+
+      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>💼 Step 3: LinkedIn agent</h3>
+        <p style={{ opacity: 0.7, fontSize: '13px', margin: '0 0 10px' }}>
+          Your Chrome extension searches the keywords above on LinkedIn (a small separate window, slow scrolling), reads the posts and
+          sends the emails it finds to the mailer. Stays logged in as you. Limit: 1 hour of LinkedIn a day.
+        </p>
+        {agent === null ? (
+          <div style={{ fontSize: '13px', opacity: 0.85 }}>
+            ⚠️ Extension not detected. Install it from the Guide (zip), put your Access Key in its config.js, reload it at chrome://extensions, then reload this page.
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn hunt-start"
+                onClick={() => window.postMessage({ src: 'jh-site', type: 'START', maxQueries: 8, steps: 14 }, window.location.origin)}
+                disabled={agent.running || selected.length === 0}
+              >
+                {agent.running ? 'Agent running...' : '▶ Start LinkedIn agent'}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => agentCmd('STOP')} disabled={!agent.running}>
+                ■ Stop
+              </button>
+            </div>
+            <div style={{ fontSize: '12px', marginTop: '8px', opacity: 0.85 }}>
+              {selected.length === 0 && 'Choose at least one role above. '}
+              {agent.running && `Search ${agent.index}/${agent.total}: "${agent.query}" • `}
+              {agent.status !== 'idle' && `${agent.posts} posts read • ${agent.emails} emails sent to the mailer`}
+              {agent.minutesLeft !== null && ` • ${agent.minutesLeft} min left today`}
+              {agent.message && ` • ${agent.message}`}
+              {agent.status === 'idle' && selected.length > 0 && 'Extension connected. Press Start.'}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

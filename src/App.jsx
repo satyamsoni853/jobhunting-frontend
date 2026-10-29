@@ -1026,6 +1026,7 @@ Satyam Soni`
         <a className="topnav-brand" href="#top">Job Hunter</a>
         <div className="topnav-links">
           <a href="#send">Send</a>
+          <a href="#hunter">Hunter</a>
           <a href="#jobs">Jobs</a>
           <a href="#advanced">Advanced</a>
           <a href="#guide">Guide</a>
@@ -1041,16 +1042,16 @@ Satyam Soni`
       </header>
 
       <SatyamSend apiBaseUrl={API_BASE_URL} />
+      <JobTargets apiBaseUrl={API_BASE_URL} />
       <JobsBoard apiBaseUrl={API_BASE_URL} />
 
       {/* Everything else: closed by default */}
       <details className="advanced" id="advanced">
-        <summary>Advanced tools <span>auto hunter, sender setup, status, resume tailor, manual campaign</span></summary>
+        <summary>Advanced tools <span>sender setup, status, resume tailor, manual campaign</span></summary>
       <div className="grid-layout">
         
         {/* Left Side: Campaign Configuration Form */}
         <section className="left-side">
-          <JobTargets apiBaseUrl={API_BASE_URL} />
           <SmtpSettings apiBaseUrl={API_BASE_URL} />
           <MailerStatus apiBaseUrl={API_BASE_URL} />
           <ResumeTailor apiBaseUrl={API_BASE_URL} />
