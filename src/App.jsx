@@ -1,11 +1,183 @@
 import { useState, useRef, useEffect } from 'react';
 import './App.css';
 
+// Helper to parse CSV properly (respecting quoted values and commas within quotes)
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let inQuotes = false;
+  let currentValue = '';
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          currentValue += '"';
+          i++; // skip next quote
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        currentValue += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        row.push(currentValue);
+        currentValue = '';
+      } else if (char === '\n' || char === '\r') {
+        row.push(currentValue);
+        currentValue = '';
+        if (row.some(cell => cell.trim() !== '')) {
+          rows.push(row);
+        }
+        row = [];
+        if (char === '\r' && nextChar === '\n') {
+          i++; // skip \n
+        }
+      } else {
+        currentValue += char;
+      }
+    }
+  }
+  
+  if (currentValue || row.length > 0) {
+    row.push(currentValue);
+    if (row.some(cell => cell.trim() !== '')) {
+      rows.push(row);
+    }
+  }
+  
+  if (rows.length === 0) return { headers: [], data: [] };
+  
+  const headers = rows[0].map(h => h.trim());
+  const data = [];
+  
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i];
+    const obj = {};
+    headers.forEach((header, idx) => {
+      obj[header] = values[idx] !== undefined ? values[idx].trim() : '';
+    });
+    data.push(obj);
+  }
+  
+  return { headers, data };
+}
+
+// Helper to replace placeholders like {{Column Name}}, {Column Name}, [Column Name] case-insensitively
+function personalizeText(text, lead) {
+  if (!text || !lead) return text;
+  let personalized = text;
+  Object.keys(lead).forEach(key => {
+    if (key.startsWith('_')) return; // ignore helper properties
+    // Escape regex characters in key
+    const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    // Match {{Key}}, {Key}, and [Key] case-insensitively with optional spaces
+    const regexDouble = new RegExp(`{{\\s*${escapedKey}\\s*}}`, 'gi');
+    const regexSingle = new RegExp(`{\\s*${escapedKey}\\s*}`, 'gi');
+    const regexSquare = new RegExp(`\\[\\s*${escapedKey}\\s*\\]`, 'gi');
+    
+    const val = lead[key] !== undefined ? lead[key] : '';
+    personalized = personalized
+      .replace(regexDouble, val)
+      .replace(regexSingle, val)
+      .replace(regexSquare, val);
+  });
+  return personalized;
+}
+
 // Dynamic API Base URL detection: Automatically uses local backend when testing on localhost, 
 // and seamlessly switches to the production Render URL when deployed!
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
-  : 'https://clentserver.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Kapoor Wealth Partners & Dr. Anmol Kapoor Corporate Ecosystem Directory
+const ECOSYSTEM_COMPANIES = [
+  {
+    name: 'Kapoor Wealth Partners',
+    shortName: 'Kapoor Wealth',
+    icon: '🏢',
+    domains: ['kapoorwealth.com', 'kapoorwealthpartners.com'],
+    color: '#ff6b00',
+    category: 'Family Office & Capital'
+  },
+  {
+    name: 'BioAro Inc.',
+    shortName: 'BioAro',
+    icon: '🧬',
+    domains: ['bioaro.com'],
+    color: '#06b6d4',
+    category: 'Genomics & Precision Health'
+  },
+  {
+    name: 'Golden Sands Estate',
+    shortName: 'Golden Sands',
+    icon: '🏖️',
+    domains: ['goldensandsestate.com', 'goldensands.com', 'goldensandsrealestate.com'],
+    color: '#f59e0b',
+    category: 'Luxury Real Estate & PropTech'
+  },
+  {
+    name: 'CardiAI Inc.',
+    shortName: 'CardiAI',
+    icon: '❤️',
+    domains: ['cardiai.com'],
+    color: '#ef4444',
+    category: 'Cardiac Biotech & Diagnostics'
+  },
+  {
+    name: 'Anryton (BioChain)',
+    shortName: 'Anryton',
+    icon: '⛓️',
+    domains: ['anryton.com'],
+    color: '#8b5cf6',
+    category: 'Quantum-Resistant Blockchain'
+  },
+  {
+    name: 'PanOmiQ',
+    shortName: 'PanOmiQ',
+    icon: '🔬',
+    domains: ['panomiq.com'],
+    color: '#10b981',
+    category: 'Multi-Omics Bioinformatics'
+  },
+  {
+    name: 'Vautra',
+    shortName: 'Vautra',
+    icon: '🛡️',
+    domains: ['vautra.com'],
+    color: '#3b82f6',
+    category: 'Decentralized Health Identity & DNA NFT'
+  },
+  {
+    name: 'Biongevity & Genelio',
+    shortName: 'Biongevity',
+    icon: '🌱',
+    domains: ['biongevity.com', 'genelio.com'],
+    color: '#14b8a6',
+    category: 'Longevity & Cellular Science'
+  },
+  {
+    name: 'Xevyo',
+    shortName: 'Xevyo',
+    icon: '🤖',
+    domains: ['xevyo.com'],
+    color: '#a855f7',
+    category: 'Frontier AI Models'
+  },
+  {
+    name: 'DIL Walk Foundation',
+    shortName: 'DIL Walk',
+    icon: '🩺',
+    domains: ['dilwalk.ca', 'dilwalk.com'],
+    color: '#ec4899',
+    category: 'Heart Health Foundation'
+  }
+];
 
 function App() {
   // 1. Form parameters
@@ -14,10 +186,18 @@ function App() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [recipients, setRecipients] = useState('');
+  const [recipientSearch, setRecipientSearch] = useState('');
+  const [recipientViewMode, setRecipientViewMode] = useState('text'); // 'text' | 'cards'
+  const [targetCompanyDomain, setTargetCompanyDomain] = useState('kapoorwealth.com');
+  const [copiedRecipients, setCopiedRecipients] = useState(false);
   const [resumeFile, setResumeFile] = useState(null);
   
   // Multiple leads files state
   const [leadsFiles, setLeadsFiles] = useState([]);
+
+  // Leads details and template placeholders
+  const [leadsData, setLeadsData] = useState([]);
+  const [availablePlaceholders, setAvailablePlaceholders] = useState([]);
 
   // 2. Auxiliary Form States
   const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +225,7 @@ function App() {
   const templates = {
     jobSeeker: {
       name: '👔 Job Application',
-      subject: 'Application for Software Engineer Position - [Your Name]',
+      subject: 'Application for Software Engineer Position - Satyam Soni',
       body: `Dear Hiring Team,
 
 I hope this email finds you well.
@@ -57,9 +237,8 @@ I have attached my resume for your review, which highlights my technical experti
 Thank you for your time and consideration. I look forward to the possibility of discussing how my background aligns with your team's engineering goals.
 
 Warm regards,
-[Your Name]
-[Your Phone Number]
-[Your Portfolio/GitHub Link]`
+Satyam Soni
+sslotsync.online`
     },
     outreach: {
       name: '⚡ Lead Generation',
@@ -73,8 +252,8 @@ We help digital agencies and startups automate their B2B cold mail outreach, hel
 I have attached a brief overview case study showing our metrics. Are you open to a quick 5-minute introductory call next Tuesday at 2:00 PM to see if we can unlock similar growth for you?
 
 Best regards,
-[Your Name]
-[Your Website]`
+Satyam Soni
+sslotsync.online`
     },
     partnership: {
       name: '🤝 Strategic Partnership',
@@ -90,7 +269,7 @@ I have attached a standard partnership proposal detailing the technical feasibil
 Please let me know if you would be open to a brief chat sometime next week to discuss this further.
 
 Warmly,
-[Your Name]`
+Satyam Soni`
     }
   };
 
@@ -109,8 +288,8 @@ Warmly,
     setSenderEmail('sender.test.account@gmail.com');
     setAppPassword('xxxx yyyy zzzz aaaa');
     setRecipients('hr.hiring.manager@gmail.com\ntalent.acquisition@openai.com\nhello.support@github.com');
-    setSubject('Application for Software Engineer Position - Alex Mercer');
-    setBody(`Dear Hiring Team,\n\nI am writing to apply for the Software Engineer role. I am an expert in full-stack Javascript, React, and Node.js.\n\nI have attached my resume. Looking forward to hearing from you!\n\nBest,\nAlex Mercer`);
+    setSubject('Application for Software Engineer Position - Satyam Soni');
+    setBody(`Dear Hiring Team,\n\nI am writing to apply for the Software Engineer role. I am an expert in full-stack Javascript, React, and Node.js.\n\nI have attached my resume. Looking forward to hearing from you!\n\nBest,\nSatyam Soni\nsslotsync.online`);
     addTerminalLog('warning', 'Loaded sample demo credentials & recipient emails.');
   };
 
@@ -203,58 +382,147 @@ Warmly,
         });
         
         const contents = await Promise.all(fileReaders);
-        let combinedText = '';
+        
+        let newLeadsData = [];
+        let newHeaders = new Set();
+        let plainEmails = [];
+        
         contents.forEach(item => {
-          combinedText += '\n' + item.text;
+          const { headers, data } = parseCSV(item.text);
+          
+          if (headers.length > 0 && data.length > 0) {
+            let emailCol = '';
+            const emailKeywords = ['email', 'contact', 'recipient', 'to', 'mail'];
+            
+            for (const key of emailKeywords) {
+              const found = headers.find(h => h.toLowerCase() === key);
+              if (found) {
+                emailCol = found;
+                break;
+              }
+            }
+            
+            if (!emailCol) {
+              const colScores = {};
+              headers.forEach(h => { colScores[h] = 0; });
+              
+              const scanRows = data.slice(0, 5);
+              scanRows.forEach(row => {
+                headers.forEach(h => {
+                  if (row[h] && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row[h].trim())) {
+                    colScores[h]++;
+                  }
+                });
+              });
+              
+              let bestCol = '';
+              let maxScore = 0;
+              headers.forEach(h => {
+                if (colScores[h] > maxScore) {
+                  maxScore = colScores[h];
+                  bestCol = h;
+                }
+              });
+              
+              if (maxScore > 0) {
+                emailCol = bestCol;
+              }
+            }
+            
+            if (emailCol) {
+              data.forEach(row => {
+                const emailVal = row[emailCol]?.trim() || '';
+                if (emailVal) {
+                  newLeadsData.push({
+                    ...row,
+                    _emailKey: emailVal.toLowerCase(),
+                    _emailColName: emailCol
+                  });
+                }
+              });
+              headers.forEach(h => newHeaders.add(h));
+            } else {
+              const matches = item.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+              plainEmails.push(...matches);
+            }
+          } else {
+            const matches = item.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+            plainEmails.push(...matches);
+          }
         });
-
-        // Search the whole text for email structures
-        const emailMatches = combinedText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-        const totalMatchesCount = emailMatches.length;
-
-        // Custom Outbound Quality Filters (unnecessary/placeholder/system emails)
+        
         const dummyKeywords = ['test', 'example', 'sample', 'placeholder', 'dummy', 'yourname', 'email.com', 'domain.com'];
         const systemKeywords = ['noreply', 'no-reply', 'mailer-daemon', 'donotreply', 'admin-alerts', 'support-copy'];
         
-        const cleanEmails = emailMatches
-          .map(email => email.trim().toLowerCase())
-          .filter(email => {
-            // 1. Syntactic regex validation
-            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!regex.test(email)) return false;
-
-            // Split into Local and Domain blocks
-            const [localPart, domainPart] = email.split('@');
-
-            // 2. Reject dummy/placeholder accounts
-            const isDummy = dummyKeywords.some(keyword => localPart.includes(keyword) || domainPart.includes(keyword));
-            if (isDummy) return false;
-
-            // 3. Reject automated system notifications
-            const isSystem = systemKeywords.some(keyword => localPart.includes(keyword));
-            if (isSystem) return false;
-
-            return true;
+        const filterEmail = (email) => {
+          const clean = email.trim().toLowerCase();
+          const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!regex.test(clean)) return false;
+          
+          const [localPart, domainPart] = clean.split('@');
+          if (dummyKeywords.some(keyword => localPart.includes(keyword) || domainPart.includes(keyword))) return false;
+          if (systemKeywords.some(keyword => localPart.includes(keyword))) return false;
+          return true;
+        };
+        
+        const seenEmails = new Set();
+        const filteredLeads = [];
+        
+        newLeadsData.forEach(lead => {
+          const email = lead._emailKey;
+          if (filterEmail(email) && !seenEmails.has(email)) {
+            seenEmails.add(email);
+            filteredLeads.push(lead);
+          }
+        });
+        
+        const filteredPlainEmails = [];
+        plainEmails.forEach(email => {
+          const clean = email.trim().toLowerCase();
+          if (filterEmail(clean) && !seenEmails.has(clean)) {
+            seenEmails.add(clean);
+            filteredPlainEmails.push(clean);
+          }
+        });
+        
+        const totalUniqueFound = filteredLeads.length + filteredPlainEmails.length;
+        
+        if (totalUniqueFound > 0) {
+          setLeadsData(prev => {
+            const existingEmails = new Set(prev.map(l => l._emailKey));
+            const merged = [...prev];
+            filteredLeads.forEach(l => {
+              if (!existingEmails.has(l._emailKey)) {
+                merged.push(l);
+              }
+            });
+            return merged;
           });
-
-        // Deduplicate the matched emails
-        const uniqueEmails = Array.from(new Set(cleanEmails));
-        const filteredOutCount = totalMatchesCount - uniqueEmails.length;
-
-        if (uniqueEmails.length > 0) {
-          // Merge with any existing emails in the recipients textarea box
+          
+          setAvailablePlaceholders(prev => {
+            const merged = new Set([...prev, ...newHeaders]);
+            return Array.from(merged);
+          });
+          
+          const emailListToAppend = [
+            ...filteredLeads.map(l => l._emailKey),
+            ...filteredPlainEmails
+          ];
+          
           setRecipients(prev => {
             const existing = prev
               .split(/[\n,;]+/)
               .map(e => e.trim().toLowerCase())
               .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
-            const merged = Array.from(new Set([...existing, ...uniqueEmails]));
+            const merged = Array.from(new Set([...existing, ...emailListToAppend]));
             return merged.join('\n');
           });
-
-          addTerminalLog('success', `✔️ Processed files successfully. Found ${uniqueEmails.length} unique outreach contact(s).`);
+          
+          addTerminalLog('success', `✔️ Processed files successfully. Found ${totalUniqueFound} unique outreach contact(s).`);
+          const totalRawMatched = plainEmails.length + newLeadsData.length;
+          const filteredOutCount = totalRawMatched - totalUniqueFound;
           if (filteredOutCount > 0) {
-            addTerminalLog('warning', `🧹 Cleaned out ${filteredOutCount} duplicate / system / invalid email address(es) (e.g. test@, noreply@, etc.).`);
+            addTerminalLog('warning', `🧹 Cleaned out ${filteredOutCount} duplicate / system / invalid email address(es).`);
           }
         } else {
           addTerminalLog('error', `❌ No valid email contacts identified inside the file(s).`);
@@ -265,18 +533,139 @@ Warmly,
     }
   };
 
-  const removeLeadsFile = (e, index) => {
+  const removeLeadsFile = async (e, index) => {
     e.stopPropagation();
-    setLeadsFiles(prev => {
-      const updated = [...prev];
-      updated.splice(index, 1);
-      return updated;
-    });
-    addTerminalLog('info', 'Leads file entry removed.');
+    const updatedFiles = [...leadsFiles];
+    updatedFiles.splice(index, 1);
+    setLeadsFiles(updatedFiles);
+    
+    addTerminalLog('info', 'Leads file entry removed. Re-indexing active databases...');
+    
+    setLeadsData([]);
+    setAvailablePlaceholders([]);
+    
+    if (updatedFiles.length === 0) {
+      setRecipients('');
+      if (leadsInputRef.current) leadsInputRef.current.value = '';
+      return;
+    }
+    
+    try {
+      const fileReaders = updatedFiles.map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve({ name: file.name, text: event.target.result });
+          reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+          reader.readAsText(file);
+        });
+      });
+      
+      const contents = await Promise.all(fileReaders);
+      
+      let newLeadsData = [];
+      let newHeaders = new Set();
+      let plainEmails = [];
+      
+      contents.forEach(item => {
+        const { headers, data } = parseCSV(item.text);
+        if (headers.length > 0 && data.length > 0) {
+          let emailCol = '';
+          const emailKeywords = ['email', 'contact', 'recipient', 'to', 'mail'];
+          for (const key of emailKeywords) {
+            const found = headers.find(h => h.toLowerCase() === key);
+            if (found) { emailCol = found; break; }
+          }
+          if (!emailCol) {
+            const colScores = {};
+            headers.forEach(h => { colScores[h] = 0; });
+            const scanRows = data.slice(0, 5);
+            scanRows.forEach(row => {
+              headers.forEach(h => {
+                if (row[h] && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row[h].trim())) {
+                  colScores[h]++;
+                }
+              });
+            });
+            let bestCol = '';
+            let maxScore = 0;
+            headers.forEach(h => {
+              if (colScores[h] > maxScore) { maxScore = colScores[h]; bestCol = h; }
+            });
+            if (maxScore > 0) emailCol = bestCol;
+          }
+          
+          if (emailCol) {
+            data.forEach(row => {
+              const emailVal = row[emailCol]?.trim() || '';
+              if (emailVal) {
+                newLeadsData.push({
+                  ...row,
+                  _emailKey: emailVal.toLowerCase(),
+                  _emailColName: emailCol
+                });
+              }
+            });
+            headers.forEach(h => newHeaders.add(h));
+          } else {
+            const matches = item.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+            plainEmails.push(...matches);
+          }
+        } else {
+          const matches = item.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+          plainEmails.push(...matches);
+        }
+      });
+      
+      const dummyKeywords = ['test', 'example', 'sample', 'placeholder', 'dummy', 'yourname', 'email.com', 'domain.com'];
+      const systemKeywords = ['noreply', 'no-reply', 'mailer-daemon', 'donotreply', 'admin-alerts', 'support-copy'];
+      const filterEmail = (email) => {
+        const clean = email.trim().toLowerCase();
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regex.test(clean)) return false;
+        const [localPart, domainPart] = clean.split('@');
+        if (dummyKeywords.some(keyword => localPart.includes(keyword) || domainPart.includes(keyword))) return false;
+        if (systemKeywords.some(keyword => localPart.includes(keyword))) return false;
+        return true;
+      };
+      
+      const seenEmails = new Set();
+      const filteredLeads = [];
+      newLeadsData.forEach(lead => {
+        const email = lead._emailKey;
+        if (filterEmail(email) && !seenEmails.has(email)) {
+          seenEmails.add(email);
+          filteredLeads.push(lead);
+        }
+      });
+      
+      const filteredPlainEmails = [];
+      plainEmails.forEach(email => {
+        const clean = email.trim().toLowerCase();
+        if (filterEmail(clean) && !seenEmails.has(clean)) {
+          seenEmails.add(clean);
+          filteredPlainEmails.push(clean);
+        }
+      });
+      
+      setLeadsData(filteredLeads);
+      setAvailablePlaceholders(Array.from(newHeaders));
+      
+      const emailListToAppend = [
+        ...filteredLeads.map(l => l._emailKey),
+        ...filteredPlainEmails
+      ];
+      setRecipients(emailListToAppend.join('\n'));
+      addTerminalLog('success', `Re-indexing complete. Active leads: ${emailListToAppend.length}`);
+    } catch (err) {
+      addTerminalLog('error', `❌ Failed to re-index leads: ${err.message}`);
+    }
   };
 
   const clearAllLeadsFiles = () => {
     setLeadsFiles([]);
+    setLeadsData([]);
+    setAvailablePlaceholders([]);
+    setRecipients('');
     if (leadsInputRef.current) leadsInputRef.current.value = '';
     addTerminalLog('info', 'All leads file attachments cleared.');
   };
@@ -332,11 +721,20 @@ Warmly,
 
         addTerminalLog('info', `✉️ [${i + 1}/${totalCount}] Dispatching email to: ${recipient}...`);
 
+        // Apply personalization if lead data exists for this email
+        const lead = leadsData.find(l => l._emailKey === recipient.toLowerCase());
+        const personalizedSubject = lead ? personalizeText(subject, lead) : subject;
+        const personalizedBody = lead ? personalizeText(body, lead) : body;
+
+        if (lead) {
+          addTerminalLog('info', `✍️ Personalizing outreach template for: ${lead['Author Name'] || recipient}`);
+        }
+
         const singleFormData = new FormData();
         singleFormData.append('senderEmail', senderEmail);
         singleFormData.append('appPassword', appPassword);
-        singleFormData.append('subject', subject);
-        singleFormData.append('body', body);
+        singleFormData.append('subject', personalizedSubject);
+        singleFormData.append('body', personalizedBody);
         singleFormData.append('recipient', recipient);
         if (resumeFileLocal) {
           singleFormData.append('resume', resumeFileLocal);
@@ -459,13 +857,166 @@ Warmly,
       .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)).length;
   };
 
+  const getParsedRecipientsList = () => {
+    if (!recipients) return [];
+    return recipients
+      .split(/[\n,;]+/)
+      .map(email => email.trim())
+      .filter(email => email.length > 0);
+  };
+
+  const getFilteredRecipients = () => {
+    const list = getParsedRecipientsList();
+    if (!recipientSearch.trim()) return list;
+    const q = recipientSearch.trim().toLowerCase();
+    return list.filter(email => email.toLowerCase().includes(q));
+  };
+
+  const handleRemoveSingleRecipient = (emailToRemove) => {
+    const currentList = getParsedRecipientsList();
+    const updated = currentList.filter(e => e.toLowerCase() !== emailToRemove.toLowerCase());
+    setRecipients(updated.join('\n'));
+    addTerminalLog('info', `🗑️ Removed recipient: ${emailToRemove}`);
+  };
+
+  const handleKeepOnlyMatches = () => {
+    const matched = getFilteredRecipients();
+    setRecipients(matched.join('\n'));
+    setRecipientSearch('');
+    addTerminalLog('info', `🎯 Kept only ${matched.length} search-matched recipient(s).`);
+  };
+
+  const handleRemoveSearchMatches = () => {
+    const matched = getFilteredRecipients();
+    const matchedSet = new Set(matched.map(e => e.toLowerCase()));
+    const currentList = getParsedRecipientsList();
+    const updated = currentList.filter(e => !matchedSet.has(e.toLowerCase()));
+    setRecipients(updated.join('\n'));
+    setRecipientSearch('');
+    addTerminalLog('info', `🗑️ Removed ${matched.length} search-matched recipient(s).`);
+  };
+
+  const handleDeduplicateRecipients = () => {
+    const currentList = getParsedRecipientsList();
+    const seen = new Set();
+    const deduped = [];
+    for (const item of currentList) {
+      const lower = item.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        deduped.push(item);
+      }
+    }
+    const removedCount = currentList.length - deduped.length;
+    setRecipients(deduped.join('\n'));
+    if (removedCount > 0) {
+      addTerminalLog('success', `🧹 Cleaned up ${removedCount} duplicate recipient(s). Total unique: ${deduped.length}.`);
+    } else {
+      addTerminalLog('info', `✔️ No duplicate recipients found (all ${deduped.length} are unique).`);
+    }
+  };
+
+  const handleCopyRecipients = (textToCopy) => {
+    if (!textToCopy) return;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedRecipients(true);
+    setTimeout(() => setCopiedRecipients(false), 2000);
+  };
+
+  const highlightMatch = (text, query) => {
+    if (!query.trim()) return text;
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+    return parts.map((part, i) => 
+      part.toLowerCase() === query.toLowerCase() ? (
+        <span key={i} className="search-highlight">{part}</span>
+      ) : part
+    );
+  };
+
+  const detectEcosystemCompany = (email) => {
+    if (!email) return null;
+    const emailLower = email.trim().toLowerCase();
+    for (const comp of ECOSYSTEM_COMPANIES) {
+      for (const d of comp.domains) {
+        if (emailLower.endsWith(`@${d}`) || emailLower.includes(`@${d}`)) {
+          return comp;
+        }
+      }
+      const slug = comp.shortName.toLowerCase().replace(/\s+/g, '');
+      if (emailLower.includes(slug)) {
+        return comp;
+      }
+    }
+    return null;
+  };
+
+  const isCompanyEmail = (email) => {
+    return detectEcosystemCompany(email) !== null;
+  };
+
+  const getEcosystemStats = () => {
+    const list = getParsedRecipientsList();
+    if (list.length === 0) {
+      return { ecosystemCount: 0, externalCount: 0, ecosystemList: [], externalList: [], byCompany: {}, total: 0 };
+    }
+    
+    const ecosystemList = [];
+    const externalList = [];
+    const byCompany = {};
+    
+    list.forEach(email => {
+      const comp = detectEcosystemCompany(email);
+      if (comp) {
+        ecosystemList.push({ email, comp });
+        byCompany[comp.shortName] = (byCompany[comp.shortName] || 0) + 1;
+      } else {
+        externalList.push(email);
+      }
+    });
+
+    return {
+      ecosystemCount: ecosystemList.length,
+      externalCount: externalList.length,
+      ecosystemList,
+      externalList,
+      byCompany,
+      total: list.length
+    };
+  };
+
+  const handleKeepOnlyEcosystemEmails = () => {
+    const list = getParsedRecipientsList();
+    const ecosystemEmails = list.filter(e => detectEcosystemCompany(e) !== null);
+    setRecipients(ecosystemEmails.join('\n'));
+    addTerminalLog('success', `🏢 ECOSYSTEM FILTER: Kept ${ecosystemEmails.length} verified group emails.`);
+  };
+
+  const handleFilterBySpecificCompany = (companyShortName) => {
+    const list = getParsedRecipientsList();
+    const matched = list.filter(e => {
+      const comp = detectEcosystemCompany(e);
+      return comp && comp.shortName.toLowerCase() === companyShortName.toLowerCase();
+    });
+    setRecipients(matched.join('\n'));
+    addTerminalLog('info', `🎯 Filtered recipient list to: ${companyShortName} (${matched.length} email(s)).`);
+  };
+
+  const handleRemoveNonEcosystemEmails = () => {
+    const list = getParsedRecipientsList();
+    const ecosystemEmails = list.filter(e => detectEcosystemCompany(e) !== null);
+    const removedCount = list.length - ecosystemEmails.length;
+    setRecipients(ecosystemEmails.join('\n'));
+    addTerminalLog('warning', `🧹 Removed ${removedCount} non-ecosystem email(s).`);
+  };
+
   return (
     <div className="app-container">
       {/* Header Panel */}
       <header className="app-header">
         <div className="brand">
-          <h1>ColdMailer</h1>
-          <p>Next-Generation Fullstack Organic SMTP Campaign Engine</p>
+          <h1>sslotsync.online ColdMailer</h1>
+          <p>Next-Generation Fullstack Organic SMTP Campaign Engine • Created by Satyam Soni</p>
         </div>
         
         <div className="tech-stack-badges">
@@ -574,6 +1125,31 @@ Warmly,
                 <legend style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--primary)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Step 2: Compose Outreach Content
                 </legend>
+
+                {availablePlaceholders.length > 0 && (
+                  <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(255, 107, 0, 0.05)', border: '1px dashed rgba(255, 107, 0, 0.2)', borderRadius: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', display: 'block', marginBottom: '8px' }}>
+                      📋 Available Placeholders (Click to copy):
+                    </span>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {availablePlaceholders.map(placeholder => (
+                        <button
+                          key={placeholder}
+                          type="button"
+                          className="template-pill"
+                          style={{ margin: 0, padding: '4px 10px', fontSize: '0.75rem', borderColor: 'rgba(255, 107, 0, 0.2)' }}
+                          onClick={() => {
+                            navigator.clipboard.writeText(`{{${placeholder}}}`);
+                            addTerminalLog('info', `Copied: {{${placeholder}}}`);
+                          }}
+                          title={`Click to copy {{${placeholder}}}`}
+                        >
+                          {`{{${placeholder}}}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ marginBottom: '14px' }}>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Quick template insert:</span>
@@ -688,23 +1264,305 @@ Warmly,
                 </div>
 
                 <div className="form-group" style={{ marginTop: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      Recipient Email Address list
-                      <span className="leads-count-badge" style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', background: 'rgba(168, 85, 247, 0.15)', color: 'var(--primary)', border: '1px solid rgba(168, 85, 247, 0.3)', textTransform: 'none', letterSpacing: 'normal' }}>
-                        {getRecipientsCount()} Leads
-                      </span>
-                    </label>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Auto-filled from files, fully editable</span>
+                  <div className="recipient-manager-box">
+                    {/* Header Row: Title, Leads Count Badge, and View Switcher */}
+                    <div className="recipient-top-bar">
+                      <div className="recipient-title-area">
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                          Recipient Email Address list
+                          <span className="leads-count-badge" style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', background: 'rgba(255, 107, 0, 0.15)', color: 'var(--primary)', border: '1px solid rgba(255, 107, 0, 0.3)', textTransform: 'none', letterSpacing: 'normal' }}>
+                            {getRecipientsCount()} Leads
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* View Mode Switcher */}
+                      <div className="recipient-view-toggle">
+                        <button
+                          type="button"
+                          className={`recipient-toggle-btn ${recipientViewMode === 'text' ? 'active' : ''}`}
+                          onClick={() => setRecipientViewMode('text')}
+                          title="Raw editable text area"
+                        >
+                          ✏️ Raw Edit
+                        </button>
+                        <button
+                          type="button"
+                          className={`recipient-toggle-btn ${recipientViewMode === 'cards' ? 'active' : ''}`}
+                          onClick={() => setRecipientViewMode('cards')}
+                          title="Interactive cards list with remove & search inspection"
+                        >
+                          📋 Card List ({getFilteredRecipients().length})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Group Ecosystem Alert & Intelligence Banner */}
+                    {(() => {
+                      const ecoStats = getEcosystemStats();
+                      return (
+                        <div className="ecosystem-alert-box">
+                          <div className="ecosystem-alert-header">
+                            <div className="ecosystem-alert-title">
+                              <span>⚡</span>
+                              <span>Kapoor Wealth Ecosystem Alert & Verifier</span>
+                            </div>
+
+                            {ecoStats.ecosystemCount > 0 ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span className="company-stat-pill success">
+                                  ✓ {ecoStats.ecosystemCount} Group Verified
+                                </span>
+                                {ecoStats.externalCount > 0 && (
+                                  <span className="company-stat-pill warning">
+                                    ⚠️ {ecoStats.externalCount} External
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  className="recipient-action-chip success"
+                                  onClick={handleKeepOnlyEcosystemEmails}
+                                  title="Keep only emails belonging to Kapoor Wealth, BioAro, Golden Sands, etc."
+                                >
+                                  🎯 Keep Only Group Emails
+                                </button>
+                                {ecoStats.externalCount > 0 && (
+                                  <button
+                                    type="button"
+                                    className="recipient-action-chip danger"
+                                    onClick={handleRemoveNonEcosystemEmails}
+                                    title="Remove all external (non-group) emails"
+                                  >
+                                    🧹 Remove External
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                Auto-detects Kapoor Wealth, BioAro, Golden Sands, CardiAI, Anryton & group emails
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Detected Sub-Company Breakdown Pills */}
+                          {ecoStats.ecosystemCount > 0 && (
+                            <div className="ecosystem-chips-container">
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Detected Ventures:</span>
+                              {Object.entries(ecoStats.byCompany).map(([compName, count]) => {
+                                const compObj = ECOSYSTEM_COMPANIES.find(c => c.shortName === compName);
+                                return (
+                                  <button
+                                    key={compName}
+                                    type="button"
+                                    className="ecosystem-badge-pill"
+                                    style={{ borderColor: compObj ? compObj.color : 'var(--primary)', color: '#fff', cursor: 'pointer' }}
+                                    onClick={() => handleFilterBySpecificCompany(compName)}
+                                    title={`Click to filter list to only ${compName} (${count} email(s))`}
+                                  >
+                                    <span>{compObj ? compObj.icon : '🏢'}</span>
+                                    <span>{compName}: <strong>{count}</strong></span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Integrated Search Bar */}
+                    <div className="recipient-search-wrapper">
+                      <span className="recipient-search-icon">🔍</span>
+                      <input
+                        type="text"
+                        className="recipient-search-input"
+                        placeholder="Search emails or ventures (e.g. bioaro.com, goldensands, palak, recruiter)..."
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                        disabled={isCampaignRunning}
+                      />
+                      {recipientSearch && (
+                        <button
+                          type="button"
+                          className="recipient-search-clear"
+                          onClick={() => setRecipientSearch('')}
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Search Feedback & Quick Filter Actions Bar */}
+                    {recipientSearch.trim() && (
+                      <div className="recipient-search-feedback">
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <strong>{getFilteredRecipients().length}</strong> matching of {getParsedRecipientsList().length} total
+                        </span>
+                        <div className="recipient-search-actions">
+                          <button
+                            type="button"
+                            className="recipient-action-chip success"
+                            onClick={handleKeepOnlyMatches}
+                            title="Filter list to only keep matching recipients"
+                          >
+                            🎯 Keep Only Matches
+                          </button>
+                          <button
+                            type="button"
+                            className="recipient-action-chip danger"
+                            onClick={handleRemoveSearchMatches}
+                            title="Remove all matching recipients from list"
+                          >
+                            🗑️ Delete Matches
+                          </button>
+                          <button
+                            type="button"
+                            className="recipient-action-chip"
+                            onClick={() => handleCopyRecipients(getFilteredRecipients().join('\n'))}
+                            title="Copy matched emails to clipboard"
+                          >
+                            📋 Copy Matches
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Main Content: Enlarged Textarea OR Interactive Cards List */}
+                    {recipientViewMode === 'text' ? (
+                      <>
+                        {(() => {
+                          const ecoStats = getEcosystemStats();
+                          if (ecoStats.externalCount > 0 && ecoStats.ecosystemCount > 0) {
+                            return (
+                              <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '6px', padding: '6px 12px', fontSize: '0.78rem', color: '#f59e0b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>⚠️ <strong>{ecoStats.externalCount} email(s)</strong> are external to Kapoor Wealth/BioAro/Golden Sands group</span>
+                                <button
+                                  type="button"
+                                  className="recipient-action-chip danger"
+                                  onClick={handleRemoveNonEcosystemEmails}
+                                  style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                                >
+                                  Clean & Keep Group Only
+                                </button>
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <textarea
+                          className="recipient-textarea-enlarged"
+                          placeholder="palak@kapoorwealth.com&#10;hr@bioaro.com&#10;info@goldensandsestate.com&#10;recruiting@cardiai.com&#10;team@anryton.com"
+                          value={recipients}
+                          onChange={(e) => setRecipients(e.target.value)}
+                          disabled={isCampaignRunning}
+                        />
+                      </>
+                    ) : (
+                      <div className="recipient-cards-scroll-container">
+                        {getFilteredRecipients().length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                            {recipientSearch.trim() ? `No recipients matching "${recipientSearch}"` : 'No recipients entered yet. Type or upload a leads file!'}
+                          </div>
+                        ) : (
+                          getFilteredRecipients().map((email, idx) => {
+                            const lead = leadsData.find(l => l._emailKey === email.toLowerCase());
+                            const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                            const ecoComp = detectEcosystemCompany(email);
+                            return (
+                              <div key={`${email}-${idx}`} className="recipient-card-row">
+                                <div className="recipient-card-email-info">
+                                  <span className="recipient-card-icon">{isValid ? '✉️' : '⚠️'}</span>
+                                  <span>{highlightMatch(email, recipientSearch)}</span>
+                                  {ecoComp ? (
+                                    <span
+                                      className="domain-verified-badge"
+                                      style={{
+                                        background: `${ecoComp.color}22`,
+                                        color: ecoComp.color,
+                                        border: `1px solid ${ecoComp.color}55`
+                                      }}
+                                    >
+                                      {ecoComp.icon} {ecoComp.shortName}
+                                    </span>
+                                  ) : (
+                                    <span className="domain-verified-badge warning">
+                                      ⚠️ External
+                                    </span>
+                                  )}
+                                  {lead && lead['Author Name'] && (
+                                    <span className="recipient-card-lead-name">
+                                      👤 {lead['Author Name']}
+                                    </span>
+                                  )}
+                                  {lead && lead['Company'] && (
+                                    <span className="recipient-card-lead-name">
+                                      🏢 {lead['Company']}
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="recipient-card-remove-btn"
+                                  onClick={() => handleRemoveSingleRecipient(email)}
+                                  title={`Remove ${email}`}
+                                  disabled={isCampaignRunning}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bottom Utility Bar: Stats & Quick Operations */}
+                    <div className="recipient-bottom-bar">
+                      <div className="recipient-meta-info">
+                        <span>Lines: {getParsedRecipientsList().length}</span>
+                        <span>•</span>
+                        <span>Valid Emails: {getRecipientsCount()}</span>
+                        {copiedRecipients && (
+                          <span style={{ color: 'var(--success)', fontWeight: 600 }}>✓ Copied!</span>
+                        )}
+                      </div>
+                      <div className="recipient-footer-actions">
+                        <button
+                          type="button"
+                          className="recipient-action-chip"
+                          onClick={handleDeduplicateRecipients}
+                          disabled={isCampaignRunning || !recipients.trim()}
+                          title="Remove duplicate emails from the list"
+                        >
+                          🧹 Deduplicate
+                        </button>
+                        <button
+                          type="button"
+                          className="recipient-action-chip"
+                          onClick={() => handleCopyRecipients(recipients)}
+                          disabled={!recipients.trim()}
+                          title="Copy all emails to clipboard"
+                        >
+                          📋 Copy All
+                        </button>
+                        <button
+                          type="button"
+                          className="recipient-action-chip danger"
+                          onClick={() => {
+                            if (window.confirm('Clear all recipients?')) {
+                              setRecipients('');
+                              setRecipientSearch('');
+                            }
+                          }}
+                          disabled={isCampaignRunning || !recipients.trim()}
+                          title="Clear all recipients"
+                        >
+                          🗑️ Clear All
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <textarea 
-                    className="input-field"
-                    style={{ minHeight: '80px', fontFamily: 'var(--mono)', fontSize: '0.85rem' }}
-                    placeholder="hr.manager@company.com&#10;recruitment@startup.io&#10;partner@business.org"
-                    value={recipients}
-                    onChange={(e) => setRecipients(e.target.value)}
-                    disabled={isCampaignRunning}
-                  />
                 </div>
               </fieldset>
 
@@ -836,7 +1694,7 @@ Warmly,
               </div>
 
               {/* Campaign Guidelines */}
-              <div style={{ background: 'rgba(168, 85, 247, 0.04)', border: '1px solid rgba(168, 85, 247, 0.1)', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ background: 'rgba(255, 107, 0, 0.04)', border: '1px solid rgba(255, 107, 0, 0.1)', borderRadius: '10px', padding: '16px' }}>
                 <h3 style={{ fontSize: '0.9rem', color: 'var(--primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   💡 SMTP Organic Sending Advice
                 </h3>
@@ -859,7 +1717,7 @@ Warmly,
       </div>
 
       <footer className="footer-text">
-        <p>ColdMailer Outbound Dashboard • Powered by React, Express, Multer, and Nodemailer</p>
+        <p>sslotsync.online ColdMailer Outbound Dashboard • Powered by React, Express, Multer, and Nodemailer • Created by Satyam Soni</p>
       </footer>
     </div>
   );
