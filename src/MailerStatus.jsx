@@ -73,7 +73,7 @@ export default function MailerStatus({ apiBaseUrl }) {
           </div>
 
           <p className="status-settings">
-            Follow-ups: {data.settings.followUps} · Business-hours sending: {data.settings.tzAware ? 'on' : 'off'} · Minimum fit:{' '}
+            Sending via: {data.settings.sendVia || 'SMTP'} · Follow-ups: {data.settings.followUps} · Business-hours sending: {data.settings.tzAware ? 'on' : 'off'} · Minimum fit:{' '}
             {Math.round(data.settings.minFit * 100)}% · Storage:{' '}
             {data.settings.storage === 'database' ? 'database (kept across restarts)' : 'files (lost when the free server restarts)'}
           </p>
