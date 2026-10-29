@@ -895,3 +895,67 @@ label {
 
 
 
+
+/* Header tagline */
+.brand .tagline {
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+/* How it works */
+.section-heading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.steps strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.steps p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.step-num {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+@media (max-width: 768px) {
+  .steps { grid-template-columns: 1fr; }
+  .app-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .brand h1 { font-size: 2rem; }
+}

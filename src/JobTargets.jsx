@@ -90,9 +90,9 @@ export default function JobTargets({ apiBaseUrl }) {
 
   return (
     <div className="card">
-      <h2 style={{ marginTop: 0 }}>🎯 Job Targets</h2>
+      <h2 style={{ marginTop: 0 }}>🎯 Auto Hunter</h2>
       <p style={{ opacity: 0.7, fontSize: '13px', marginTop: 0 }}>
-        Select one or more. The LinkedIn extension searches all keywords of the selected targets.
+        Step 1: choose the roles you want. Select one or more, each comes with 20 search keywords.
       </p>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -122,13 +122,26 @@ export default function JobTargets({ apiBaseUrl }) {
       </div>
 
       <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+        <h3 style={{ margin: '0 0 4px', fontSize: '15px' }}>▶ Step 2: Start hunting</h3>
+        <p style={{ opacity: 0.7, fontSize: '13px', margin: '0 0 10px' }}>
+          Enter your access key, then press Start. You can close this tab, mails keep going out from the server.
+        </p>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <input
             type="password"
             placeholder="Access key"
             value={accessKey}
             onChange={(e) => saveKey(e.target.value)}
-            style={{ flex: 1, minWidth: '140px' }}
+            style={{
+              flex: 1,
+              minWidth: '140px',
+              padding: '10px 12px',
+              background: 'var(--bg-terminal)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              fontFamily: 'inherit',
+            }}
           />
           <button type="button" className="btn" onClick={startHunt} disabled={!accessKey || hunt?.running}>
             {hunt?.running ? 'Hunting...' : '▶ Start'}

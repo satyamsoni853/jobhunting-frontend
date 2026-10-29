@@ -1016,16 +1016,45 @@ Satyam Soni`
       {/* Header Panel */}
       <header className="app-header">
         <div className="brand">
-          <h1>sslotsync.online ColdMailer</h1>
-          <p>Next-Generation Fullstack Organic SMTP Campaign Engine • Created by Satyam Soni</p>
+          <h1>Job Hunter</h1>
+          <p className="tagline">Find hiring posts, collect recruiter emails, apply automatically.</p>
+          <p>sslotsync.online ColdMailer • Created by Satyam Soni</p>
         </div>
-        
+
         <div className="tech-stack-badges">
           <div className="tech-badge react">React</div>
           <div className="tech-badge node">Node.js</div>
           <div className="tech-badge express">Express</div>
         </div>
       </header>
+
+      {/* How it works */}
+      <section className="how-it-works" aria-label="How it works">
+        <h2 className="section-heading">How it works</h2>
+        <ol className="steps">
+          <li>
+            <span className="step-num">1</span>
+            <div>
+              <strong>Choose targets</strong>
+              <p>Pick the roles you want: freelancing, frontend, backend, full stack or remote.</p>
+            </div>
+          </li>
+          <li>
+            <span className="step-num">2</span>
+            <div>
+              <strong>Start hunting</strong>
+              <p>The server scans public hiring posts and collects the emails recruiters share.</p>
+            </div>
+          </li>
+          <li>
+            <span className="step-num">3</span>
+            <div>
+              <strong>Mails go out</strong>
+              <p>Your application and resume are sent in the background, one by one, no duplicates.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
 
       {/* Main Grid Layout */}
       <div className="grid-layout">
@@ -1035,7 +1064,12 @@ Satyam Soni`
           <JobTargets apiBaseUrl={API_BASE_URL} />
           <div className="card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0 }}>✉️ Dispatch Campaign</h2>
+              <div>
+                <h2 style={{ margin: 0 }}>✉️ Manual Campaign</h2>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', opacity: 0.7 }}>
+                  Prefer to send yourself? Upload a CSV and dispatch with your own SMTP login.
+                </p>
+              </div>
               <button 
                 type="button" 
                 onClick={loadDemoData} 
