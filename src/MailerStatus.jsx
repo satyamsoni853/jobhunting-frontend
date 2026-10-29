@@ -12,7 +12,7 @@ export default function MailerStatus({ apiBaseUrl }) {
   const load = useCallback(async () => {
     let key = '';
     try {
-      key = localStorage.getItem('jobhunting_key') || '';
+      key = (localStorage.getItem('jobhunting_key') || '').trim();
     } catch {
       /* storage blocked */
     }

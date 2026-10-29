@@ -40,7 +40,7 @@ export default function JobTargets({ apiBaseUrl }) {
   // Needs the server's access key (same as AUTO_API_KEY), kept only in this browser.
   const [accessKey, setAccessKey] = useState(() => {
     try {
-      return localStorage.getItem('jobhunting_key') || '';
+      return (localStorage.getItem('jobhunting_key') || '').trim();
     } catch {
       return '';
     }
@@ -48,12 +48,12 @@ export default function JobTargets({ apiBaseUrl }) {
   const [hunt, setHunt] = useState(null);
   const [huntError, setHuntError] = useState('');
 
-  const keyHeaders = { 'X-API-Key': accessKey };
+  const keyHeaders = { 'X-API-Key': accessKey.trim() };
 
   const saveKey = (v) => {
     setAccessKey(v);
     try {
-      localStorage.setItem('jobhunting_key', v);
+      localStorage.setItem('jobhunting_key', v.trim());
     } catch {
       /* storage blocked, key just stays in memory */
     }

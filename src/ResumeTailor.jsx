@@ -13,7 +13,7 @@ export default function ResumeTailor({ apiBaseUrl }) {
 
   const getKey = () => {
     try {
-      return localStorage.getItem('jobhunting_key') || '';
+      return (localStorage.getItem('jobhunting_key') || '').trim();
     } catch {
       return '';
     }
