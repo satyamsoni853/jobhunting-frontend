@@ -36,6 +36,54 @@ export default function JobTargets({ apiBaseUrl }) {
     }
   };
 
+  // Start hunt: the server collects leads from Hacker News "Who is hiring?" and queues the mails.
+  // Needs the server's access key (same as AUTO_API_KEY), kept only in this browser.
+  const [accessKey, setAccessKey] = useState(() => {
+    try {
+      return localStorage.getItem('jobhunting_key') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [hunt, setHunt] = useState(null);
+  const [huntError, setHuntError] = useState('');
+
+  const keyHeaders = { 'X-API-Key': accessKey };
+
+  const saveKey = (v) => {
+    setAccessKey(v);
+    try {
+      localStorage.setItem('jobhunting_key', v);
+    } catch {
+      /* storage blocked, key just stays in memory */
+    }
+  };
+
+  const fetchHunt = async () => {
+    const res = await fetch(`${apiBaseUrl}/api/hunt/status`, { headers: keyHeaders });
+    if (res.status === 401) throw new Error('Wrong access key');
+    if (!res.ok) throw new Error('Server error');
+    setHunt(await res.json());
+  };
+
+  const startHunt = async () => {
+    setHuntError('');
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/hunt/start`, { method: 'POST', headers: keyHeaders });
+      if (res.status === 401) throw new Error('Wrong access key');
+      if (!res.ok) throw new Error('Server error');
+      setHunt((await res.json()).state);
+    } catch (e) {
+      setHuntError(e.message);
+    }
+  };
+
+  useEffect(() => {
+    if (!hunt?.running) return undefined;
+    const t = setInterval(() => fetchHunt().catch((e) => setHuntError(e.message)), 2000);
+    return () => clearInterval(t);
+  }, [hunt?.running]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const totalQueries = categories
     .filter((c) => selected.includes(c.key))
     .reduce((n, c) => n + c.queries.length, 0);
@@ -71,6 +119,32 @@ export default function JobTargets({ apiBaseUrl }) {
         {status === 'saving' && 'Saving...'}
         {(status === 'ready' || status === 'saved') &&
           `${selected.length} selected • ${totalQueries} search keywords${status === 'saved' ? ' • saved' : ''}`}
+      </div>
+
+      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <input
+            type="password"
+            placeholder="Access key"
+            value={accessKey}
+            onChange={(e) => saveKey(e.target.value)}
+            style={{ flex: 1, minWidth: '140px' }}
+          />
+          <button type="button" className="btn" onClick={startHunt} disabled={!accessKey || hunt?.running}>
+            {hunt?.running ? 'Hunting...' : '▶ Start'}
+          </button>
+        </div>
+        <div style={{ fontSize: '12px', marginTop: '8px', opacity: 0.85 }}>
+          {huntError && `⚠️ ${huntError}`}
+          {!huntError && hunt && (
+            <>
+              {hunt.scanned} posts scanned • {hunt.matched} with email • {hunt.queued} queued for mail
+              {hunt.error && ` • error: ${hunt.error}`}
+              {!hunt.running && hunt.finishedAt && !hunt.error && ' • done'}
+            </>
+          )}
+          {!huntError && !hunt && 'Source: Hacker News "Who is hiring?" (public). Mails go out in the background.'}
+        </div>
       </div>
 
       {categories
