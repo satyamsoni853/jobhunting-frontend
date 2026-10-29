@@ -31,6 +31,7 @@ export default function JobTargets({ apiBaseUrl }) {
       });
       if (!res.ok) throw new Error();
       setStatus('saved');
+      window.dispatchEvent(new Event('jh-selection')); // the Jobs list follows the chosen roles
     } catch {
       setStatus('error');
     }

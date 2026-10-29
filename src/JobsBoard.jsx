@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 
 // Jobs from public job boards that only give an apply link (no recruiter email). Open them and apply by hand.
 // Each job is scored against the resume on the server, the best fits come first.
-const SOURCES = ['Remote OK', 'Remotive', 'We Work Remotely', 'Himalayas'];
 
 const ago = (iso) => {
   const t = new Date(iso).getTime();
@@ -17,10 +16,18 @@ export default function JobsBoard({ apiBaseUrl }) {
   const [q, setQ] = useState('');
   const [source, setSource] = useState('');
   const [min, setMin] = useState(0.45);
+  const [bySelection, setBySelection] = useState(true); // only the roles chosen in Auto Hunter
+  const [tick, setTick] = useState(0); // bumped when the chosen roles change
+
+  useEffect(() => {
+    const bump = () => setTick((t) => t + 1);
+    window.addEventListener('jh-selection', bump);
+    return () => window.removeEventListener('jh-selection', bump);
+  }, []);
 
   useEffect(() => {
     let live = true;
-    fetch(`${apiBaseUrl}/api/jobs?limit=120&minFit=${min}`)
+    fetch(`${apiBaseUrl}/api/jobs?limit=150&minFit=${min}${bySelection ? '&selected=1' : ''}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         if (live) {
@@ -32,7 +39,7 @@ export default function JobsBoard({ apiBaseUrl }) {
     return () => {
       live = false;
     };
-  }, [apiBaseUrl, min]);
+  }, [apiBaseUrl, min, bySelection, tick]);
 
   const jobs = useMemo(() => {
     if (!data) return [];
@@ -61,7 +68,7 @@ export default function JobsBoard({ apiBaseUrl }) {
         />
         <select className="input-field" value={source} onChange={(e) => setSource(e.target.value)} aria-label="Source">
           <option value="">All sources</option>
-          {SOURCES.map((s) => (
+          {(data?.sources || []).map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
@@ -73,11 +80,25 @@ export default function JobsBoard({ apiBaseUrl }) {
           }}
           aria-label="Minimum fit"
         >
+          <option value={0.2}>Fit 20%+</option>
           <option value={0.3}>Fit 30%+</option>
           <option value={0.45}>Fit 45%+</option>
           <option value={0.7}>Fit 70%+</option>
         </select>
       </div>
+
+      <label className="jobs-sel">
+        <input
+          type="checkbox"
+          checked={bySelection}
+          onChange={(e) => {
+            setStatus('loading');
+            setBySelection(e.target.checked);
+          }}
+        />
+        Only the roles I chose in Auto Hunter
+        {bySelection && data?.categories?.length > 0 && <b> ({data.categories.length} selected)</b>}
+      </label>
 
       {status === 'loading' && <p className="card-sub">Loading jobs... the server may take a minute to wake up.</p>}
       {status === 'error' && <p className="tailor-error">⚠️ Could not load jobs from the server.</p>}
