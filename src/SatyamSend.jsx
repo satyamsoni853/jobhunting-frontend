@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-// The simple screen: press Satyam, enter the code mailed to the owner, paste the emails, press Send.
+// The simple screen: press Satyam, enter your password, paste the emails, press Send.
 // The sender Gmail and the resume live on the server and are never shown or asked for here.
 const TOKEN_KEY = 'satyam_token';
 
@@ -18,8 +18,7 @@ const LABEL = { success: 'Sent', 'dry-run': 'Test', followup: 'Follow-up', skipp
 const TONE = { success: 'good', 'dry-run': 'good', followup: 'good', skipped: 'low', failed: 'bad' };
 
 export default function SatyamSend({ apiBaseUrl }) {
-  const [phase, setPhase] = useState('idle'); // idle | sending | code | checking | ready
-  const [masked, setMasked] = useState('');
+  const [phase, setPhase] = useState('idle'); // idle | pin | checking | ready
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
@@ -79,21 +78,12 @@ export default function SatyamSend({ apiBaseUrl }) {
     return () => clearTimeout(t);
   }, [open]);
 
-  const requestCode = async () => {
+  // A token from earlier in this tab opens the screen at once, otherwise the password is asked
+  const askPin = () => {
     if (readToken()) return open();
-    setPhase('sending');
+    setCode('');
     setError('');
-    try {
-      const res = await fetch(`${apiBaseUrl}/api/profile/satyam/otp`, { method: 'POST' });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
-      setMasked(d.to);
-      setCode('');
-      setPhase('code');
-    } catch (e) {
-      setError(e.message);
-      setPhase('idle');
-    }
+    setPhase('pin');
   };
 
   const verify = async () => {
@@ -103,7 +93,7 @@ export default function SatyamSend({ apiBaseUrl }) {
       const res = await fetch(`${apiBaseUrl}/api/profile/satyam/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code: code.trim() }),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
@@ -115,7 +105,7 @@ export default function SatyamSend({ apiBaseUrl }) {
       await open();
     } catch (e) {
       setError(e.message);
-      setPhase('code');
+      setPhase('pin');
     }
   };
 
@@ -176,37 +166,32 @@ export default function SatyamSend({ apiBaseUrl }) {
         <>
           <h2 style={{ marginTop: 0 }}>👤 Send my applications</h2>
           <p className="card-sub">
-            Press Satyam, enter the code sent to your email, then paste the addresses and send. Your Gmail and resume are
-            already set on the server.
+            Press Satyam, enter your password, then paste the addresses and send. Your Gmail and resume are already set on the
+            server.
           </p>
 
-          {(phase === 'idle' || phase === 'sending') && (
-            <button type="button" className="btn satyam-cta" onClick={requestCode} disabled={phase === 'sending'}>
-              {phase === 'sending' ? 'Sending the code...' : '👤 Satyam'}
+          {phase === 'idle' && (
+            <button type="button" className="btn satyam-cta" onClick={askPin}>
+              👤 Satyam
             </button>
           )}
 
-          {(phase === 'code' || phase === 'checking') && (
-            <div className="otp-box" role="group" aria-label="Verification code">
-              <p>
-                A 6 digit code was sent to <b>{masked}</b>.
-              </p>
+          {(phase === 'pin' || phase === 'checking') && (
+            <div className="otp-box" role="group" aria-label="Password">
+              <p>Enter your password.</p>
               <div className="otp-row">
                 <input
                   className="input-field otp-input"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  maxLength={6}
-                  placeholder="123456"
+                  type="password"
+                  autoComplete="current-password"
+                  autoFocus
+                  placeholder="Password"
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && verify()}
+                  onChange={(e) => setCode(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && code.trim() && verify()}
                 />
-                <button type="button" className="btn" onClick={verify} disabled={code.length !== 6 || phase === 'checking'}>
-                  {phase === 'checking' ? 'Checking...' : 'Verify'}
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={requestCode}>
-                  Resend
+                <button type="button" className="btn" onClick={verify} disabled={!code.trim() || phase === 'checking'}>
+                  {phase === 'checking' ? 'Checking...' : 'Unlock'}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={() => setPhase('idle')}>
                   Cancel
