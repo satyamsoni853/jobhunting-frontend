@@ -21,6 +21,7 @@ export default function SmtpSettings({ apiBaseUrl }) {
   const [remember, setRemember] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [busy, setBusy] = useState(false);
+  const [apiMsg, setApiMsg] = useState({ type: '', text: '' });
 
   const api = useCallback(
     (method, body) =>
@@ -113,6 +114,36 @@ export default function SmtpSettings({ apiBaseUrl }) {
     }
   };
 
+  // Gmail API: the server signs in to Google itself and keeps the token, nothing to copy
+  const connectApi = async () => {
+    setBusy(true);
+    setApiMsg({ type: '', text: '' });
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/google/connect`, { method: 'POST', headers: { 'X-API-Key': readKey() } });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || `Server error ${res.status}`);
+      window.location.href = d.url; // Google asks for permission, then returns to the server
+    } catch (e) {
+      setApiMsg({ type: 'err', text: e.message });
+      setBusy(false);
+    }
+  };
+
+  const testApi = async () => {
+    setBusy(true);
+    setApiMsg({ type: '', text: '' });
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/mail/check`, { headers: { 'X-API-Key': readKey() } });
+      const d = await res.json();
+      if (res.status === 401) throw new Error('Wrong access key.');
+      setApiMsg(d.ok && d.canSend ? { type: 'ok', text: 'Connected: the server can send mail through the Gmail API.' } : { type: 'err', text: `${d.error || 'Gmail API cannot send yet.'}${d.googleCode ? ` (${d.googleCode})` : ''}` });
+    } catch (e) {
+      setApiMsg({ type: 'err', text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const connected = info?.configured;
 
   return (
@@ -176,6 +207,19 @@ export default function SmtpSettings({ apiBaseUrl }) {
 
       {msg.text && <p className={`smtp-msg ${msg.type}`}>{msg.text}</p>}
       {connected && info.source === 'env' && <p className="card-sub">This login comes from the server&apos;s settings. Connect here to override it.</p>}
+
+      <div className="gmail-api">
+        <div className="tailor-label">Gmail API (works where SMTP is blocked)</div>
+        <div className="btn-row">
+          <button type="button" className="btn" onClick={connectApi} disabled={busy}>
+            Connect Gmail API
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={testApi} disabled={busy}>
+            Test connection
+          </button>
+        </div>
+        {apiMsg.text && <p className={`smtp-msg ${apiMsg.type}`}>{apiMsg.text}</p>}
+      </div>
     </div>
   );
 }

@@ -1242,3 +1242,5 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .advanced[open] > summary::after { content: '–'; }
 .advanced > summary span { display: block; font-weight: 400; font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
 .advanced[open] { padding-bottom: 16px; }
+
+.gmail-api { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color); }
