@@ -68,10 +68,11 @@ const TOPICS = [
     title: '🧩 How do I use the Chrome extension?',
     body: (
       <ol>
+        <li>Download the ZIP above and unzip it to a folder you will keep.</li>
         <li>Open chrome://extensions and turn on Developer mode.</li>
-        <li>Press <b>Load unpacked</b> and choose the extension folder.</li>
-        <li>Set the same Access Key in the extension&apos;s <code>content.js</code> and reload it.</li>
-        <li>Open LinkedIn, turn on monitoring in the panel and scroll. New emails are queued automatically.</li>
+        <li>Press <b>Load unpacked</b> and choose the unzipped <code>slotsync-leadflow</code> folder.</li>
+        <li>Open <code>config.js</code> in a text editor, put the server url and your Access Key, save, then reload the extension.</li>
+        <li>Open LinkedIn, press the round button, turn on monitoring and scroll. New emails are queued automatically.</li>
       </ol>
     ),
   },
@@ -106,10 +107,28 @@ const TOPICS = [
   },
 ];
 
+function ExtensionDownload() {
+  return (
+    <div className="ext-card">
+      <div>
+        <h3>🧩 Chrome Extension: SlotSync LeadFlow</h3>
+        <p>
+          Collects emails from LinkedIn posts while you scroll and sends them to your server. Install it in 4 steps:
+          unzip, open chrome://extensions, turn on Developer mode, Load unpacked.
+        </p>
+      </div>
+      <a className="btn" href="/slotsync-leadflow-extension.zip" download>
+        ⬇ Download ZIP
+      </a>
+    </div>
+  );
+}
+
 export default function Guide() {
   return (
     <section className="guide" aria-label="Guide">
-      <h2 className="section-heading">Guide</h2>
+      <ExtensionDownload />
+      <h2 className="section-heading" style={{ marginTop: '20px' }}>Guide</h2>
       <div className="guide-list">
         {TOPICS.map((t, i) => (
           <details key={t.title} className="guide-item" open={i === 0}>
