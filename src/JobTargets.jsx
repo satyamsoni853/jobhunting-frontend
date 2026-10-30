@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from './toastBus.js';
 
 // Multiselect of job categories. Each category carries 20 LinkedIn search queries,
 // the extension searches the queries of every selected category.
@@ -74,8 +75,10 @@ export default function JobTargets({ apiBaseUrl }) {
       if (res.status === 401) throw new Error('Wrong access key');
       if (!res.ok) throw new Error('Server error');
       setHunt((await res.json()).state);
+      toast('ok', 'Hunt started. Emails will be queued as they are found.');
     } catch (e) {
       setHuntError(e.message);
+      toast('err', `Hunt did not start: ${e.message}`);
     }
   };
 
@@ -84,6 +87,16 @@ export default function JobTargets({ apiBaseUrl }) {
     const t = setInterval(() => fetchHunt().catch((e) => setHuntError(e.message)), 2000);
     return () => clearInterval(t);
   }, [hunt?.running]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // tell when the hunt finishes
+  const huntWasRunning = useRef(false);
+  useEffect(() => {
+    if (huntWasRunning.current && hunt && !hunt.running) {
+      if (hunt.error) toast('err', `Hunt stopped: ${hunt.error}`);
+      else toast('ok', `Hunt finished: ${hunt.scanned} posts scanned, ${hunt.queued} queued for mail`);
+    }
+    huntWasRunning.current = Boolean(hunt?.running);
+  }, [hunt]);
 
   // LinkedIn agent: the Chrome extension (bridge.js) runs the searches in the user's own logged-in browser.
   // The site only sends Start/Stop and shows progress. No key or LinkedIn data passes through this page.
@@ -107,6 +120,18 @@ export default function JobTargets({ apiBaseUrl }) {
   }, []);
   useEffect(() => {
     pinged.current = agent !== null;
+  }, [agent]);
+
+  // toasts for the extension: found, started, finished, and any message it shows (login needed, daily cap...)
+  const agentSeen = useRef({ found: false, running: false, message: '' });
+  useEffect(() => {
+    if (!agent) return;
+    const prev = agentSeen.current;
+    if (!prev.found) toast('ok', 'Chrome extension connected');
+    if (!prev.running && agent.running) toast('ok', 'LinkedIn agent started');
+    if (prev.running && !agent.running) toast(agent.message ? 'err' : 'ok', `LinkedIn agent stopped: ${agent.posts} posts read, ${agent.emails} emails sent to the mailer`);
+    if (agent.message && agent.message !== prev.message) toast('info', agent.message);
+    agentSeen.current = { found: true, running: Boolean(agent.running), message: agent.message || '' };
   }, [agent]);
 
   // hand the Access Key (typed in Step 2) to the extension, so config.js needs no editing

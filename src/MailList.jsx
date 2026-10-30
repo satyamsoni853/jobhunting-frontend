@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from './toastBus.js';
 
 // The full mail list: who is waiting (can be cancelled or sent now), who was mailed, who was skipped and why.
@@ -24,6 +24,8 @@ export default function MailList({ apiBaseUrl }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
+  const seen = useRef(null); // keys of mails already announced; null until the first load
+  const lastQueue = useRef(0);
 
   const call = useCallback(
     async (path, body) => {
@@ -41,9 +43,27 @@ export default function MailList({ apiBaseUrl }) {
     [apiBaseUrl]
   );
 
+  // toast every new mail sent, every failure and every new batch queued (nothing on the first load)
+  const announce = (d) => {
+    const sent = (d.sent || []).map((s) => ({ key: `${s.email}|${s.at}`, ...s }));
+    const failed = (d.skipped || []).filter((h) => h.status === 'failed').map((h) => ({ key: `${h.email}|${h.at}`, ...h }));
+    if (seen.current) {
+      const newSent = sent.filter((s) => !seen.current.has(s.key));
+      if (newSent.length > 3) toast('ok', `${newSent.length} mails sent`);
+      else for (const s of newSent) toast('ok', `Mail sent to ${s.email}${s.company ? ` (${s.company})` : ''}`);
+      for (const h of failed.filter((x) => !seen.current.has(x.key)).slice(0, 3)) toast('err', `Mail to ${h.email} failed: ${h.error || h.reason || 'unknown error'}`);
+      const q = (d.queue || []).length;
+      if (q > lastQueue.current) toast('info', `${q - lastQueue.current} new email${q - lastQueue.current === 1 ? '' : 's'} queued`);
+    }
+    seen.current = new Set([...sent, ...failed].map((x) => x.key));
+    lastQueue.current = (d.queue || []).length;
+  };
+
   const load = useCallback(async () => {
     try {
-      setData(await call('/api/mail/overview'));
+      const d = await call('/api/mail/overview');
+      announce(d);
+      setData(d);
       setError('');
     } catch (e) {
       setError(e.message);

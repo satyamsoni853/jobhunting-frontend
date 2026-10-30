@@ -1276,3 +1276,10 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .toast.ok { border-color: #10b981; }
 .toast.err { border-color: #ef4444; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* last mails in Mailer Status */
+.status-recent { margin: 12px 0 4px; font-size: 0.88rem; }
+.status-recent ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.status-recent li { display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 8px; }
+.status-recent li .sr-sub { grid-column: 2; color: var(--text-secondary, #9ca3af); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-recent li.bad { color: #f87171; }

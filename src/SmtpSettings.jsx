@@ -122,6 +122,41 @@ export default function SmtpSettings({ apiBaseUrl }) {
     toast(m.type, m.text);
   };
 
+  // show the Gmail API state as soon as the page opens (no toast, just the line under the buttons)
+  useEffect(() => {
+    const key = readKey();
+    if (!key) return;
+    fetch(`${apiBaseUrl}/api/mail/check`, { headers: { 'X-API-Key': key } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c) => {
+        if (!c) return;
+        setApiMsg(c.ok && c.canSend ? { type: 'ok', text: 'Gmail API: connected, the server can send mail.' } : { type: 'err', text: `Gmail API: not connected yet. ${c.error || ''}`.trim() });
+      })
+      .catch(() => {});
+  }, [apiBaseUrl]);
+
+  // the sign-in finishes in the other tab: ask the server every 3 s (up to 3 min) until its connection time changes
+  const watchConnect = async () => {
+    const check = async () => {
+      const r = await fetch(`${apiBaseUrl}/api/mail/check`, { headers: { 'X-API-Key': readKey() } });
+      return r.json();
+    };
+    try {
+      const before = (await check()).connectedAt || 0;
+      for (let i = 0; i < 60; i += 1) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const c = await check();
+        if ((c.connectedAt || 0) !== before) {
+          showApi(c.ok && c.canSend ? { type: 'ok', text: 'Gmail API connected. The server can send mail now.' } : { type: 'err', text: `Connected, but Gmail cannot send yet: ${c.error || 'missing permission'}` });
+          return;
+        }
+      }
+      toast('info', 'Still waiting for Google. Finish the sign-in tab, then press Test connection.');
+    } catch (e) {
+      toast('err', `Could not confirm the connection: ${e.message}`);
+    }
+  };
+
   const connectApi = async () => {
     setBusy(true);
     setApiMsg({ type: '', text: '' });
@@ -134,6 +169,7 @@ export default function SmtpSettings({ apiBaseUrl }) {
       if (popup) {
         popup.location.href = d.url; // Google asks for permission, then returns to the server
         setBusy(false);
+        watchConnect();
       } else window.location.href = d.url;
     } catch (e) {
       if (popup) popup.close();

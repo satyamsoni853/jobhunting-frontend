@@ -71,6 +71,25 @@ export default function MailerStatus({ apiBaseUrl }) {
             <div><b>{data.sentToday}/{data.dailyLimit}</b><span>Sent today</span></div>
           </div>
 
+          {(() => {
+            const last = (data.recent || []).filter((h) => ['success', 'failed', 'dry-run'].includes(h.status)).slice(0, 6);
+            if (!last.length) return null;
+            return (
+              <div className="status-recent">
+                <b>Last mails</b>
+                <ul>
+                  {last.map((h, i) => (
+                    <li key={`${h.email}-${h.at}-${i}`} className={h.status === 'failed' ? 'bad' : ''}>
+                      <span>{new Date(h.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>{h.status === 'failed' ? '❌' : '✅'} {h.email}{h.company ? ` (${h.company})` : ''}</span>
+                      <span className="sr-sub">{h.status === 'failed' ? h.error : h.subject}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
+
           <p className="status-settings">
             Sending via: {data.settings.sendVia || 'SMTP'} · Follow-ups: {data.settings.followUps} · Business-hours sending: {data.settings.tzAware ? 'on' : 'off'} · Minimum fit:{' '}
             {Math.round(data.settings.minFit * 100)}% · Storage:{' '}
