@@ -17,6 +17,7 @@ export default function JobsBoard({ apiBaseUrl }) {
   const [source, setSource] = useState('');
   const [min, setMin] = useState(0.45);
   const [bySelection, setBySelection] = useState(true); // only the roles chosen in Auto Hunter
+  const [freelanceOnly, setFreelanceOnly] = useState(true); // focus: freelance and contract work
   const [tick, setTick] = useState(0); // bumped when the chosen roles change
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function JobsBoard({ apiBaseUrl }) {
 
   useEffect(() => {
     let live = true;
-    fetch(`${apiBaseUrl}/api/jobs?limit=150&minFit=${min}${bySelection ? '&selected=1' : ''}`)
+    fetch(`${apiBaseUrl}/api/jobs?limit=150&minFit=${min}${bySelection ? '&selected=1' : ''}${freelanceOnly ? '&freelance=1' : ''}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
         if (live) {
@@ -39,7 +40,7 @@ export default function JobsBoard({ apiBaseUrl }) {
     return () => {
       live = false;
     };
-  }, [apiBaseUrl, min, bySelection, tick]);
+  }, [apiBaseUrl, min, bySelection, freelanceOnly, tick]);
 
   const jobs = useMemo(() => {
     if (!data) return [];
@@ -90,6 +91,18 @@ export default function JobsBoard({ apiBaseUrl }) {
       <label className="jobs-sel">
         <input
           type="checkbox"
+          checked={freelanceOnly}
+          onChange={(e) => {
+            setStatus('loading');
+            setFreelanceOnly(e.target.checked);
+          }}
+        />
+        Freelance and contract work only <b>(focus for now)</b>
+      </label>
+
+      <label className="jobs-sel">
+        <input
+          type="checkbox"
           checked={bySelection}
           onChange={(e) => {
             setStatus('loading');
@@ -118,9 +131,11 @@ export default function JobsBoard({ apiBaseUrl }) {
                     {j.company && <span>{j.company}</span>}
                     <span>{j.location}</span>
                     <span>{ago(j.postedAt)}</span>
+                    {j.budget && <span>💰 {j.budget}</span>}
                     <span className="job-src">{j.source}</span>
                   </div>
                   <div className="tag-list">
+                    {j.freelance && <span className="tag good">Freelance</span>}
                     <span className="tag">{j.role}</span>
                     {j.skills.slice(0, 4).map((s) => (
                       <span key={s} className="tag good">
@@ -144,7 +159,7 @@ export default function JobsBoard({ apiBaseUrl }) {
             ))}
           </ul>
           {jobs.length === 0 && <p className="card-sub">No jobs match. Try a lower fit or clear the search.</p>}
-          <p className="jobs-credit">Listings from Remote OK, Remotive, We Work Remotely and Himalayas. Links open the original site.</p>
+          <p className="jobs-credit">Listings from Freelancer.com, Remote OK, Remotive, Himalayas, Jobicy, Arbeitnow, Working Nomads and Jobspresso. Links open the original site.</p>
         </>
       )}
     </div>
