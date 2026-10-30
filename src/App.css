@@ -1269,3 +1269,10 @@ html { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .ml-actions .btn { padding: 6px 10px; font-size: 0.8rem; }
 .ml-empty { color: var(--text-muted); font-size: 0.88rem; justify-content: center !important; }
 @media (max-width: 640px) { .ml-list li { flex-direction: column; align-items: stretch; } .ml-actions .btn { flex: 1; } }
+
+/* toasts */
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; max-width: min(360px, calc(100vw - 32px)); }
+.toast { padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; line-height: 1.35; color: #f3f4f6; background: #1f2230; border: 1px solid #2f3347; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); cursor: pointer; animation: toast-in 0.2s ease-out; }
+.toast.ok { border-color: #10b981; }
+.toast.err { border-color: #ef4444; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

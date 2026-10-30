@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from './toastBus.js';
 
 // Connects the sender Gmail for the background mailer. The App Password goes to the server once, which checks it
 // with Gmail and keeps it encrypted. It is never shown again. "Remember" keeps a copy in this browser only, so the
@@ -115,6 +116,12 @@ export default function SmtpSettings({ apiBaseUrl }) {
   };
 
   // Gmail API: the server signs in to Google itself and keeps the token, nothing to copy
+  // shows the result under the buttons and as a toast
+  const showApi = (m) => {
+    setApiMsg(m);
+    toast(m.type, m.text);
+  };
+
   const connectApi = async () => {
     setBusy(true);
     setApiMsg({ type: '', text: '' });
@@ -123,11 +130,12 @@ export default function SmtpSettings({ apiBaseUrl }) {
       const res = await fetch(`${apiBaseUrl}/api/google/connect`, { method: 'POST', headers: { 'X-API-Key': readKey() } });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `Server error ${res.status}`);
+      toast('info', 'Google opened in a new tab. Allow it, then press Test connection here.');
       if (popup) popup.location.href = d.url; // Google asks for permission, then returns to the server
       else window.location.href = d.url;
     } catch (e) {
       if (popup) popup.close();
-      setApiMsg({ type: 'err', text: e.message });
+      showApi({ type: 'err', text: e.message });
       setBusy(false);
     }
   };
@@ -139,9 +147,9 @@ export default function SmtpSettings({ apiBaseUrl }) {
       const res = await fetch(`${apiBaseUrl}/api/mail/check`, { headers: { 'X-API-Key': readKey() } });
       const d = await res.json();
       if (res.status === 401) throw new Error('Wrong access key.');
-      setApiMsg(d.ok && d.canSend ? { type: 'ok', text: 'Connected: the server can send mail through the Gmail API.' } : { type: 'err', text: `${d.error || 'Gmail API cannot send yet.'}${d.googleCode ? ` (${d.googleCode})` : ''}` });
+      showApi(d.ok && d.canSend ? { type: 'ok', text: 'Connected: the server can send mail through the Gmail API.' } : { type: 'err', text: `${d.error || 'Gmail API cannot send yet.'}${d.googleCode ? ` (${d.googleCode})` : ''}` });
     } catch (e) {
-      setApiMsg({ type: 'err', text: e.message });
+      showApi({ type: 'err', text: e.message });
     } finally {
       setBusy(false);
     }

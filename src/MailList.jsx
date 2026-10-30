@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from './toastBus.js';
 
 // The full mail list: who is waiting (can be cancelled or sent now), who was mailed, who was skipped and why.
 // Needs the Access Key from Auto Hunter. Refreshes every 8 seconds.
@@ -64,8 +65,10 @@ export default function MailList({ apiBaseUrl }) {
     try {
       await call(path, body);
       await load();
+      toast('ok', label === 'all' ? 'All waiting mails cancelled.' : label.startsWith('now-') ? 'Moved to sending now.' : 'Mail cancelled.');
     } catch (e) {
       setError(e.message);
+      toast('err', e.message);
     } finally {
       setBusy('');
     }
@@ -83,8 +86,10 @@ export default function MailList({ apiBaseUrl }) {
       a.download = 'all-emails.csv';
       a.click();
       URL.revokeObjectURL(url);
+      toast('ok', 'CSV downloaded.');
     } catch (e) {
       setError(e.message);
+      toast('err', e.message);
     } finally {
       setBusy('');
     }

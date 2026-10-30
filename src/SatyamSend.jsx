@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from './toastBus.js';
 
 // The simple screen: press Satyam, enter your password, paste the emails, press Send.
 // The sender Gmail and the resume live on the server and are never shown or asked for here.
@@ -170,9 +171,11 @@ export default function SatyamSend({ apiBaseUrl }) {
         `Queued ${d.queued} of ${d.total}.${d.blockedOrSkipped ? ` ${d.blockedOrSkipped} left out (already mailed, blocked or invalid).` : ''} They go out one by one with a short gap.`
       );
       setRecipients('');
+      toast('ok', `Queued ${d.queued} of ${d.total}.`);
       refresh();
     } catch (e) {
       setError(e.message);
+      toast('err', e.message);
     } finally {
       setBusy(false);
     }
