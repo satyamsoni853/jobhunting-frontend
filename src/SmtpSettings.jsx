@@ -131,8 +131,10 @@ export default function SmtpSettings({ apiBaseUrl }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `Server error ${res.status}`);
       toast('info', 'Google opened in a new tab. Allow it, then press Test connection here.');
-      if (popup) popup.location.href = d.url; // Google asks for permission, then returns to the server
-      else window.location.href = d.url;
+      if (popup) {
+        popup.location.href = d.url; // Google asks for permission, then returns to the server
+        setBusy(false);
+      } else window.location.href = d.url;
     } catch (e) {
       if (popup) popup.close();
       showApi({ type: 'err', text: e.message });
