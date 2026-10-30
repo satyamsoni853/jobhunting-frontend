@@ -118,12 +118,15 @@ export default function SmtpSettings({ apiBaseUrl }) {
   const connectApi = async () => {
     setBusy(true);
     setApiMsg({ type: '', text: '' });
+    const popup = window.open('', '_blank'); // opened now so the popup blocker allows it; the site stays in this tab
     try {
       const res = await fetch(`${apiBaseUrl}/api/google/connect`, { method: 'POST', headers: { 'X-API-Key': readKey() } });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `Server error ${res.status}`);
-      window.location.href = d.url; // Google asks for permission, then returns to the server
+      if (popup) popup.location.href = d.url; // Google asks for permission, then returns to the server
+      else window.location.href = d.url;
     } catch (e) {
+      if (popup) popup.close();
       setApiMsg({ type: 'err', text: e.message });
       setBusy(false);
     }
