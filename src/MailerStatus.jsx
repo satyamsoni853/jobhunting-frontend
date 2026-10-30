@@ -68,7 +68,7 @@ export default function MailerStatus({ apiBaseUrl }) {
             <div><b>{s.bounced + s.invalid}</b><span>Bounced / invalid</span></div>
             <div><b>{s.followUpsSent}</b><span>Follow-ups</span></div>
             <div><b>{data.queueLength}</b><span>In queue</span></div>
-            <div><b>{data.sentToday}/{data.dailyLimit}</b><span>Sent today</span></div>
+            <div><b>{data.sentToday}/20</b><span>Today (target 20)</span></div>
           </div>
 
           {(() => {

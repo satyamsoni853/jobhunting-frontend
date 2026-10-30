@@ -13,6 +13,7 @@ const readKey = () => {
 };
 
 const hhmm = (iso) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const TARGET = 20; // mails per day the owner wants to reach
 const isToday = (iso) => new Date(iso).toDateString() === new Date().toDateString();
 
 // one history entry from the server -> one log line
@@ -68,8 +69,7 @@ export default function LiveConsole({ apiBaseUrl }) {
   const failedToday = history.filter((h) => h.status === 'failed' && isToday(h.at)).length;
   const queue = overview?.queue || [];
   const sentToday = status?.sentToday ?? 0;
-  const limit = status?.dailyLimit || 0;
-  const pct = limit ? Math.min(100, (sentToday / limit) * 100) : 0;
+  const pct = Math.min(100, (sentToday / TARGET) * 100);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'nearest' });
@@ -94,8 +94,8 @@ export default function LiveConsole({ apiBaseUrl }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px' }}>
         <div className="progress-header">
-          <span>{queue.length > 0 ? '⚡ Mailing automatically' : '✅ Queue is empty'}</span>
-          <span>{limit ? `${sentToday} / ${limit} today` : ''}</span>
+          <span>{sentToday >= TARGET ? '🎯 Daily target reached' : queue.length > 0 ? '⚡ Mailing automatically' : '⏳ Queue is empty, waiting for new leads'}</span>
+          <span>{sentToday} / {TARGET} target today</span>
         </div>
         <div className="progress-bar-container">
           <div className="progress-bar" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%)' }}></div>

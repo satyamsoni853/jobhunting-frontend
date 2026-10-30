@@ -26,6 +26,7 @@ export default function MailList({ apiBaseUrl }) {
   const [busy, setBusy] = useState('');
   const seen = useRef(null); // keys of mails already announced; null until the first load
   const lastQueue = useRef(0);
+  const lastToday = useRef(0);
 
   const call = useCallback(
     async (path, body) => {
@@ -55,6 +56,9 @@ export default function MailList({ apiBaseUrl }) {
       const q = (d.queue || []).length;
       if (q > lastQueue.current) toast('info', `${q - lastQueue.current} new email${q - lastQueue.current === 1 ? '' : 's'} queued`);
     }
+    const today = sent.filter((s) => new Date(s.at).toDateString() === new Date().toDateString()).length;
+    if (seen.current && lastToday.current < 20 && today >= 20) toast('ok', '🎯 Daily target reached: 20 mails sent today');
+    lastToday.current = today;
     seen.current = new Set([...sent, ...failed].map((x) => x.key));
     lastQueue.current = (d.queue || []).length;
   };
