@@ -7,7 +7,7 @@ const TOKEN_KEY = 'satyam_token';
 
 const readToken = () => {
   try {
-    const t = JSON.parse(sessionStorage.getItem(TOKEN_KEY) || 'null');
+    const t = JSON.parse(localStorage.getItem(TOKEN_KEY) || 'null');
     return t && t.exp > Date.now() ? t.token : '';
   } catch {
     return '';
@@ -51,7 +51,7 @@ export default function SatyamSend({ apiBaseUrl }) {
 
   const lock = useCallback((message = '') => {
     try {
-      sessionStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_KEY);
     } catch {
       /* storage blocked */
     }
@@ -117,7 +117,7 @@ export default function SatyamSend({ apiBaseUrl }) {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || `Server returned ${res.status}`);
       try {
-        sessionStorage.setItem(TOKEN_KEY, JSON.stringify({ token: d.token, exp: Date.now() + d.expiresIn * 1000 }));
+        localStorage.setItem(TOKEN_KEY, JSON.stringify({ token: d.token, exp: Date.now() + d.expiresIn * 1000 }));
       } catch {
         /* storage blocked: the code is asked again next time */
       }
