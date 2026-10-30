@@ -7,6 +7,7 @@ import JobsBoard from './JobsBoard.jsx';
 import SatyamSend from './SatyamSend.jsx';
 import MailerStatus from './MailerStatus.jsx';
 import MailList from './MailList.jsx';
+import LiveConsole from './LiveConsole.jsx';
 import SmtpSettings from './SmtpSettings.jsx';
 
 // Helper to parse CSV properly (respecting quoted values and commas within quotes)
@@ -1654,6 +1655,10 @@ Satyam Soni`
               Tracks email execution status, API loop responses, and SMTP logs.
             </p>
 
+            {/* no manual campaign running: show the live automatic mailer */}
+            {!(isCampaignRunning || terminalLogs.length > 0 || stats.total > 0) ? (
+              <LiveConsole apiBaseUrl={API_BASE_URL} />
+            ) : (
             <div className="dispatch-dashboard" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
               {/* Stats Counters */}
@@ -1744,6 +1749,7 @@ Satyam Soni`
               </div>
 
             </div>
+            )}
           </div>
         </section>
 
