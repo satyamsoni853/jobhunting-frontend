@@ -140,10 +140,15 @@ export default function SatyamSend({ apiBaseUrl }) {
     try {
       const res = await call('/api/satyam/status');
       if (res.ok) setStatus(await res.json());
+      // the server forgets every verification when it restarts (a new deploy): lock the screen instead of showing a stale one
+      else if (res.status === 401) {
+        lock('The server restarted, so your verification expired. Press Satyam and enter the password again.');
+        toast('info', 'Satyam screen locked after a server restart. Enter the password again.');
+      }
     } catch {
       /* the status is a convenience, ignore a failed refresh */
     }
-  }, [call]);
+  }, [call, lock]);
 
   // While mails are waiting, keep the progress fresh
   useEffect(() => {
